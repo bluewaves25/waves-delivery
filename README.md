@@ -25,6 +25,7 @@ Password for **all** accounts: `123456`
 | Public tracking | parcel `DEMO-TRACK-001` | [/track/DEMO-TRACK-001](https://dpdms-web.onrender.com/track/DEMO-TRACK-001) |
 
 Full click-through checklist: **[docs/TESTING.md](docs/TESTING.md)**  
+Who pays whom: **[docs/HOW_MONEY_WORKS.md](docs/HOW_MONEY_WORKS.md)**  
 Deploy notes: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 
 ## What visitors can do

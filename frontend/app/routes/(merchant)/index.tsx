@@ -78,7 +78,7 @@ function Home() {
                             Pickup and delivery across Ghana.
                         </Heading>
                         <Text fontSize={{ base: 'md', md: 'lg' }} color="whiteAlpha.800" maxW="lg">
-                            Track a parcel in seconds, or book a delivery for your shop.
+                            Track a parcel in seconds, or book a delivery with SendGH.
                         </Text>
                         <Flex gap={3} flexWrap="wrap" pt={2}>
                             <Button

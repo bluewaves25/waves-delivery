@@ -159,7 +159,7 @@ function Register() {
             <div className="md:flex">
                 <LoginRegLeftSide
                     title="Start sending with SendGH"
-                    subtitle="Create your shop account, then book pickups and deliveries across Ghana."
+                    subtitle="Create a merchant account for your business, then manage pickups and deliveries across Ghana."
                 />
 
                 <Box className="flex md:w-1/2 justify-center items-center bg-white overflow-y-auto h-full flex-col">

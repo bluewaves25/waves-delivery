@@ -97,7 +97,7 @@ const ShopAndParcelInfo: FC<ShopAndParcelInfoProps> = ({ actionData }) => {
                             textAlign="right"
                             readOnly
                         />
-                        <Text>Tk</Text>
+                        <Text>GHS</Text>
                     </Flex>
                 </Flex>
             </Stack>

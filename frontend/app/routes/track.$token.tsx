@@ -1,5 +1,5 @@
 import type { LoaderArgs, MetaFunction } from '@remix-run/node'
-import { json } from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
 import { Form, Link as RemixLink, useLoaderData, useSearchParams } from '@remix-run/react'
 import {
     Alert,
@@ -24,23 +24,49 @@ export const meta: MetaFunction = () => ({
     title: 'Track a parcel — SendGH',
 })
 
+function apiBaseUrl() {
+    const base = process.env.API_BASE_URL?.replace(/\/$/, '')
+    if (base) return base
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('API_BASE_URL is not set on the web service')
+    }
+    return 'http://localhost:8000'
+}
+
 export async function loader({ params, request }: LoaderArgs) {
     const url = new URL(request.url)
-    const q = url.searchParams.get('q')
-    const token = params.token || q
-    if (!token || token === 'lookup') {
+    const q = url.searchParams.get('q')?.trim() || null
+    const param = params.token
+
+    // Home/track forms POST to /track/lookup?q=… — redirect to a real track URL
+    if ((!param || param === 'lookup') && q) {
+        return redirect(`/track/${encodeURIComponent(q)}`)
+    }
+
+    if (!param || param === 'lookup') {
         return json({ parcel: null, error: null as string | null, token: null })
     }
 
-    const baseURL = process.env.API_BASE_URL || 'http://localhost:8000'
+    const token = param
     try {
-        const res = await axios.get(`${baseURL}/track/${encodeURIComponent(token)}`)
-        return json({ parcel: res.data.data, error: null as string | null, token })
+        const res = await axios.get(
+            `${apiBaseUrl()}/track/${encodeURIComponent(token)}`,
+            { timeout: 25000 },
+        )
+        const parcel = res.data?.data
+        if (!parcel) {
+            return json({
+                parcel: null,
+                error: 'Tracking data missing from API response',
+                token,
+            })
+        }
+        return json({ parcel, error: null as string | null, token })
     } catch (e: any) {
-        const message =
-            e?.response?.data?.message ||
-            e?.message ||
-            'Unable to load tracking information'
+        const raw = e?.response?.data?.message
+        const message = Array.isArray(raw)
+            ? raw.join(', ')
+            : raw || e?.message || 'Unable to load tracking information'
         return json({ parcel: null, error: String(message), token })
     }
 }
@@ -68,7 +94,12 @@ export default function TrackParcelPage() {
                             <Text color="gray.600">
                                 Enter the parcel number or tracking token. No login required.
                                 Need to send something?{' '}
-                                <Link as={RemixLink} to="/book" color="primary.500" fontWeight="semibold">
+                                <Link
+                                    as={RemixLink}
+                                    to="/book"
+                                    color="primary.500"
+                                    fontWeight="semibold"
+                                >
                                     Book a delivery
                                 </Link>
                                 .
@@ -80,7 +111,11 @@ export default function TrackParcelPage() {
                                 <Input
                                     type="text"
                                     name="q"
-                                    defaultValue={searchParams.get('q') || token || ''}
+                                    defaultValue={
+                                        searchParams.get('q') ||
+                                        (token && token !== 'lookup' ? token : '') ||
+                                        ''
+                                    }
                                     placeholder={`e.g. ${DEMO.track}`}
                                     bg="white"
                                     size="lg"
@@ -98,7 +133,7 @@ export default function TrackParcelPage() {
                             </Flex>
                         </Form>
 
-                        <DemoCredentials variant="all" compact />
+                        {!parcel ? <DemoCredentials variant="all" compact /> : null}
 
                         {error ? (
                             <Alert status="error" borderRadius="md">
@@ -179,7 +214,7 @@ export default function TrackParcelPage() {
                         ) : null}
 
                         <Text fontSize="sm" color="gray.500">
-                            Staff or shop accounts:{' '}
+                            Merchant or staff login:{' '}
                             <Link as={RemixLink} to="/login" color="primary.500">
                                 Log in
                             </Link>

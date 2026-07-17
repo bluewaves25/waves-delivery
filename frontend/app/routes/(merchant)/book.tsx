@@ -459,6 +459,37 @@ export default function BookDeliveryPage() {
                             </Button>
                         </Text>
 
+                        <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
+                            <Heading size="sm" mb={3}>
+                                How money works
+                            </Heading>
+                            <Stack spacing={2} fontSize="sm" color="gray.600">
+                                <Text>
+                                    <Text as="span" fontWeight="semibold" color="gray.800">
+                                        SendGH
+                                    </Text>{' '}
+                                    is the courier. The delivery charge shown is your fee to
+                                    SendGH for pickup and delivery.
+                                </Text>
+                                <Text>
+                                    <Text as="span" fontWeight="semibold" color="gray.800">
+                                        Cash on delivery (optional)
+                                    </Text>{' '}
+                                    is money the rider collects from the customer (e.g. for goods
+                                    you sold). SendGH remits that to you later, minus the delivery
+                                    fee.
+                                </Text>
+                                <Text>
+                                    <Text as="span" fontWeight="semibold" color="gray.800">
+                                        Merchant account / shops
+                                    </Text>{' '}
+                                    are for businesses that send often — a “shop” is your store
+                                    location, not a payment to that store. Individuals can book
+                                    above without signing up.
+                                </Text>
+                            </Stack>
+                        </Box>
+
                         <DemoCredentials variant="all" compact />
                     </VStack>
                 </Form>

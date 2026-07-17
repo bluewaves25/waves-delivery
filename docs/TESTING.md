@@ -30,7 +30,7 @@ Use this checklist against the live demo or local stack.
 | 1.3 | Footer has the same four links | |
 | 1.4 | Demo access box lists merchant / admin / riders / track | Credentials visible on home |
 | 1.5 | Click **Track a parcel** → `/track/lookup` | Track form + SendGH header |
-| 1.6 | Track `DEMO-TRACK-001` | Parcel status, address, timeline load |
+| 1.6 | Track `DEMO-TRACK-001` via form or `/track/lookup?q=DEMO-TRACK-001` | Redirects to `/track/DEMO-TRACK-001` and shows status |
 | 1.7 | Or open `/track/DEMO-TRACK-001` directly | Same result |
 | 1.8 | Click **Book a delivery** → `/book` | Guest form (no signup required) |
 
