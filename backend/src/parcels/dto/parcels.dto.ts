@@ -6,8 +6,10 @@ import {
   IsOptional,
   Min,
   MaxLength,
+  IsBoolean,
+  ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateParcelDto implements Parcel {
   id: number;
@@ -93,20 +95,29 @@ export class GuestCreateParcelDto {
   @IsNumber()
   senderAreaId: number;
 
+  /** When true, recipient name/phone/address can be filled later as "Any" */
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === 'on')
+  @IsBoolean()
+  recipientAny?: boolean;
+
+  @ValidateIf((o) => !o.recipientAny)
   @IsNotEmpty()
   @IsString()
   @MaxLength(120)
-  customerName: string;
+  customerName?: string;
 
+  @ValidateIf((o) => !o.recipientAny)
   @IsNotEmpty()
   @IsString()
   @MaxLength(40)
-  customerPhone: string;
+  customerPhone?: string;
 
+  @ValidateIf((o) => !o.recipientAny)
   @IsNotEmpty()
   @IsString()
   @MaxLength(300)
-  customerAddress: string;
+  customerAddress?: string;
 
   @Type(() => Number)
   @IsNumber()

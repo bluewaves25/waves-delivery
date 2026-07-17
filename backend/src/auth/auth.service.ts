@@ -9,6 +9,8 @@ import { CreateUserDto } from 'src/users/dto/users.dto';
 import { ShopsService } from 'src/shops/shops.service';
 import { ShopPickupPointsService } from 'src/shop-pickup-points/shop-pickup-points.service';
 import { UserWithRolesDetails } from './types/auth.types';
+import { FiledPackageHandlersService } from 'src/filed-package-handlers/filed-package-handlers.service';
+import { RiderRegisterDto } from './dto/rider-register.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private rolesService: RolesService,
     private shopsService: ShopsService,
     private shopPickupPointsService: ShopPickupPointsService,
+    private filedPackageHandlersService: FiledPackageHandlersService,
   ) {}
 
   // Validate user with username(Email) and password
@@ -270,5 +273,24 @@ export class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /** Public rider / pickup signup — works for SendGH as deliveryman or pickupman */
+  async packageHandlerRegister(data: RiderRegisterDto) {
+    const role = await this.rolesService.roleDetail({
+      name: data.roleType,
+    });
+    if (!role) {
+      throw new BadRequestException(`Role ${data.roleType} not found — run seed`);
+    }
+    return this.filedPackageHandlersService.createFieldPackageHandler({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      address: data.address,
+      areaId: data.areaId,
+      roleId: role.id,
+    } as any);
   }
 }

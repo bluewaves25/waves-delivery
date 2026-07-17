@@ -9,6 +9,7 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { CreateUserDto } from 'src/users/dto/users.dto';
+import { RiderRegisterDto } from './dto/rider-register.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -39,5 +40,19 @@ export class AuthController {
   @Post('packageHandler/login')
   async packagehandlerLogin(@Request() req) {
     return this.authService.packageHandlerLogin(req.user);
+  }
+
+  // POST /auth/packageHandler/register — public rider signup
+  @Post('packageHandler/register')
+  async packageHandlerRegister(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+      }),
+    )
+    body: RiderRegisterDto,
+  ) {
+    return this.authService.packageHandlerRegister(body);
   }
 }

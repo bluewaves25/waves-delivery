@@ -249,16 +249,27 @@ export class ParcelsService {
 
     const noteParts = [
       `Guest booking from ${dto.senderName.trim()} (${dto.senderPhone.trim()})`,
+      dto.recipientAny ? 'Recipient: Any (TBD at delivery)' : null,
       dto.parcelExtraInformation?.trim() || null,
     ].filter(Boolean);
 
     const timelineMessage = `Guest booking created. Pickup from ${dto.senderAddress.trim()}`;
+    const customerName = dto.recipientAny
+      ? 'Any'
+      : (dto.customerName || '').trim();
+    const customerPhone = dto.recipientAny
+      ? 'TBD'
+      : (dto.customerPhone || '').trim();
+    const customerAddress = dto.recipientAny
+      ? (dto.customerAddress || '').trim() ||
+        `Area ID ${dto.parcelDeliveryAreaId} — address TBD`
+      : (dto.customerAddress || '').trim();
 
     const parcel = await this.prisma.parcel.create({
       data: {
-        customerName: dto.customerName.trim(),
-        customerPhone: dto.customerPhone.trim(),
-        customerAddress: dto.customerAddress.trim(),
+        customerName,
+        customerPhone,
+        customerAddress,
         parcelWeight: weight,
         parcelCashCollection: cash,
         parcelPrice,

@@ -10,6 +10,7 @@ import { AuthController } from './auth.controller';
 import { RolesModule } from 'src/roles/roles.module';
 import { ShopsModule } from 'src/shops/shops.module';
 import { ShopPickupPointsModule } from 'src/shop-pickup-points/shop-pickup-points.module';
+import { FiledPackageHandlersModule } from 'src/filed-package-handlers/filed-package-handlers.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ShopPickupPointsModule } from 'src/shop-pickup-points/shop-pickup-point
     RolesModule,
     ShopsModule,
     ShopPickupPointsModule,
+    FiledPackageHandlersModule,
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,

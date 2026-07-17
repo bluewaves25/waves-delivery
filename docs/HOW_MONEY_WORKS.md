@@ -35,6 +35,17 @@ flowchart LR
 
 **Not fully automated yet:** taking card/MoMo payment at booking, and auto-paying merchants their COD remittance. Dashboard payment screens are partly placeholders — treat the model above as the product direction.
 
-## Tracking
+## Booking without a known customer
 
-Use parcel number or tracking token at `/track/...` or the home track form. After booking, you are redirected to the track page automatically.
+On `/book`, check **Recipient: Any** when you do not know the customer yet. Name/phone become TBD; the rider fills them at delivery. Area is still required so the fee can be priced.
+
+## Riders (package handlers)
+
+Riders can **sign up** at `/packagehandler/register` (delivery or pickup role).
+
+On each successful delivery, SendGH:
+- Credits the rider **80%** of the delivery fee (configurable via `RIDER_DELIVERY_SHARE`)
+- Keeps **20%** platform commission on the delivery fee
+- Keeps the **1% COD commission** declared at booking
+
+Rider dashboard shows wallet balance, delivery count, and Bronze / Silver / Gold rewards (10 / 50 / 100 deliveries).

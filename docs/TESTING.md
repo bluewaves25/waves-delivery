@@ -51,11 +51,12 @@ Use this checklist against the live demo or local stack.
 
 | #    | Action                                                          | Expected                                             |
 | ---- | --------------------------------------------------------------- | ---------------------------------------------------- |
-| 1b.1 | Open `/book`                                                    | Form: From you / To customer / Package + live charge |
+| 1b.1 | Open `/book`                                                    | Form: From you / Delivery destination / Package + live charge |
+| 1b.1a | Optional: check **Recipient: Any** | Customer name/phone hidden; address optional |
 | 1b.2 | Fill pickup + delivery areas (Ghana), phones, addresses, weight | Estimate updates when delivery area + weight set     |
 | 1b.3 | Submit **Book delivery**                                        | Redirect to `/track/<token>` with new parcel         |
 | 1b.4 | Note parcel number on track page                                | Can re-track later with that number                  |
-| 1b.5 | Optional COD amount                                             | Charge includes 1% COD fee                           |
+| 1b.5 | Optional COD amount                                             | Charge shows COD + **1% COD commission** to SendGH   |
 
 
 API check:
@@ -113,10 +114,11 @@ curl -X POST https://dpdms-api.onrender.com/parcels/guest \
 
 | #   | Action                                                             | Expected                                          |
 | --- | ------------------------------------------------------------------ | ------------------------------------------------- |
-| 4.1 | `/packagehandler/login`                                            | Prefills pickup rider; demo box shows both riders |
-| 4.2 | Log in as **[reyad@gmail.com](mailto:reyad@gmail.com)**            | Pickup dashboard                                  |
-| 4.3 | Log out; log in as **[tushar@gmail.com](mailto:tushar@gmail.com)** | Delivery dashboard                                |
-| 4.4 | If parcels are assigned, update status / pick up | **Public track page updates live** (no refresh) if left open |
+| 4.0 | `/packagehandler/register` | Rider can self-sign up (delivery or pickup) |
+| 4.1 | `/packagehandler/login` | Prefills pickup rider; demo box; link to Sign up |
+| 4.2 | Log in as **reyad@gmail.com** | Pickup dashboard |
+| 4.3 | Log out; log in as **tushar@gmail.com** | Delivery dashboard with **earnings + rewards** |
+| 4.4 | Complete a delivery | Wallet balance increases; platform COD + delivery commission recorded |
 
 
 | Role     | Email              | Password |

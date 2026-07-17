@@ -132,6 +132,135 @@ export class PaymentsService {
     });
   }
 
+  async settleParcelDelivery(params: {
+    parcelNumber: string;
+    parcelId: number;
+    parcelUserId: number;
+    riderUserId: number;
+    parcelCashCollection: number;
+    parcelCharge: number;
+  }) {
+    const idempotencyKey = `settle_${params.parcelNumber}`;
+    const existing = await this.prisma.payment.findUnique({
+      where: { idempotencyKey },
+    });
+    if (existing) {
+      return { alreadySettled: true, payment: existing };
+    }
+
+    const cash = Number(params.parcelCashCollection) || 0;
+    const codFee = cash > 0 ? cash / 100 : 0;
+    const deliveryFee = Math.max(
+      0,
+      Number(params.parcelCharge || 0) - codFee,
+    );
+    const riderShareRate = Number(process.env.RIDER_DELIVERY_SHARE || 0.8);
+    const riderEarn = Math.round(deliveryFee * riderShareRate * 100) / 100;
+    const platformDeliveryShare =
+      Math.round(deliveryFee * (1 - riderShareRate) * 100) / 100;
+    const platformCommission =
+      Math.round((platformDeliveryShare + codFee) * 100) / 100;
+
+    const payment = await this.prisma.payment.create({
+      data: {
+        userId: params.riderUserId,
+        parcelId: params.parcelId,
+        amount: riderEarn,
+        currency: 'GHS',
+        provider: 'internal',
+        providerRef: `earn_${params.parcelNumber}`,
+        idempotencyKey,
+        status: 'success',
+        purpose: 'rider_delivery_earn',
+        metadata: JSON.stringify({
+          parcelNumber: params.parcelNumber,
+          cashOnDelivery: cash,
+          codFeePlatform: codFee,
+          deliveryFee,
+          riderEarn,
+          platformCommission,
+          riderShareRate,
+        }),
+      },
+    });
+
+    if (riderEarn > 0) {
+      await this.prisma.walletLedger.create({
+        data: {
+          userId: params.riderUserId,
+          paymentId: payment.id,
+          entryType: 'credit',
+          amount: riderEarn,
+          description: `Delivery earn ${params.parcelNumber} (after ${Math.round(
+            (1 - riderShareRate) * 100,
+          )}% platform commission)`,
+        },
+      });
+    }
+
+    // Platform COD + delivery commission recorded against parcel owner (merchant/walk-in)
+    if (platformCommission > 0) {
+      await this.prisma.walletLedger.create({
+        data: {
+          userId: params.parcelUserId,
+          paymentId: payment.id,
+          entryType: 'debit',
+          amount: platformCommission,
+          description: `Platform fee ${params.parcelNumber} (delivery share GHS ${platformDeliveryShare.toFixed(
+            2,
+          )} + COD fee GHS ${codFee.toFixed(2)})`,
+        },
+      });
+    }
+
+    return {
+      alreadySettled: false,
+      payment,
+      riderEarn,
+      platformCommission,
+      codFee,
+      deliveryFee,
+    };
+  }
+
+  async riderEarningsSummary(userId: number) {
+    const ledger = await this.prisma.walletLedger.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    let balance = 0;
+    for (const row of ledger) {
+      balance +=
+        row.entryType === 'credit' ? row.amount : -Math.abs(row.amount);
+    }
+    const earnPayments = await this.prisma.payment.count({
+      where: {
+        userId,
+        purpose: 'rider_delivery_earn',
+        status: 'success',
+      },
+    });
+
+    const rewards = [
+      { id: 'bronze', label: 'Bronze', threshold: 10 },
+      { id: 'silver', label: 'Silver', threshold: 50 },
+      { id: 'gold', label: 'Gold', threshold: 100 },
+    ].map((r) => ({
+      ...r,
+      unlocked: earnPayments >= r.threshold,
+    }));
+
+    const nextReward = rewards.find((r) => !r.unlocked) || null;
+
+    return {
+      balance: Math.round(balance * 100) / 100,
+      deliveredCount: earnPayments,
+      rewards,
+      nextReward,
+      recentLedger: ledger.slice(0, 10),
+    };
+  }
+
   private mockAuthUrl(ref: string) {
     const base =
       process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:3000/payments/callback';

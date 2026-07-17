@@ -268,6 +268,15 @@ function Login() {
                                     Log in
                                 </Button>
                             </Form>
+                            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                                New rider?{' '}
+                                <a
+                                    href="/packagehandler/register"
+                                    className="text-red-600 font-medium"
+                                >
+                                    Sign up to work for SendGH
+                                </a>
+                            </p>
                             <DemoCredentials variant="all" compact />
                         </div>
                     </div>

@@ -3,6 +3,7 @@ import {
     AlertIcon,
     Box,
     Button,
+    Checkbox,
     Container,
     FormControl,
     FormLabel,
@@ -83,6 +84,7 @@ export const action: ActionFunction = async ({ request }) => {
         senderPhone: String(form.get('senderPhone') || '').trim(),
         senderAddress: String(form.get('senderAddress') || '').trim(),
         senderAreaId: String(form.get('senderAreaId') || ''),
+        recipientAny: form.get('recipientAny') === 'on' || form.get('recipientAny') === 'true',
         customerName: String(form.get('customerName') || '').trim(),
         customerPhone: String(form.get('customerPhone') || '').trim(),
         customerAddress: String(form.get('customerAddress') || '').trim(),
@@ -99,14 +101,24 @@ export const action: ActionFunction = async ({ request }) => {
         !fields.senderPhone ||
         !fields.senderAddress ||
         !fields.senderAreaId ||
-        !fields.customerName ||
-        !fields.customerPhone ||
-        !fields.customerAddress ||
         !fields.parcelDeliveryAreaId
     ) {
         return badRequest({
-            formError: 'Please fill in all required fields.',
-            fields,
+            formError: 'Please fill pickup details and delivery area.',
+            fields: { ...fields, recipientAny: String(fields.recipientAny) },
+        } satisfies ActionData)
+    }
+
+    if (
+        !fields.recipientAny &&
+        (!fields.customerName ||
+            !fields.customerPhone ||
+            !fields.customerAddress)
+    ) {
+        return badRequest({
+            formError:
+                'Enter customer details, or check “Recipient: Any” if you do not know them yet.',
+            fields: { ...fields, recipientAny: String(fields.recipientAny) },
         } satisfies ActionData)
     }
 
@@ -116,9 +128,14 @@ export const action: ActionFunction = async ({ request }) => {
             senderPhone: fields.senderPhone,
             senderAddress: fields.senderAddress,
             senderAreaId: Number(fields.senderAreaId),
-            customerName: fields.customerName,
-            customerPhone: fields.customerPhone,
-            customerAddress: fields.customerAddress,
+            recipientAny: fields.recipientAny,
+            customerName: fields.recipientAny ? undefined : fields.customerName,
+            customerPhone: fields.recipientAny
+                ? undefined
+                : fields.customerPhone,
+            customerAddress: fields.recipientAny
+                ? fields.customerAddress || undefined
+                : fields.customerAddress,
             parcelDeliveryAreaId: Number(fields.parcelDeliveryAreaId),
             parcelWeight: Number(fields.parcelWeight) || 500,
             parcelCashCollection: Number(fields.parcelCashCollection) || 0,
@@ -162,6 +179,9 @@ export default function BookDeliveryPage() {
     )
     const [deliveryAreaId, setDeliveryAreaId] = React.useState(
         actionData?.fields?.parcelDeliveryAreaId || '',
+    )
+    const [recipientAny, setRecipientAny] = React.useState(
+        actionData?.fields?.recipientAny === 'true',
     )
 
     const deliveryCharge = React.useMemo(
@@ -272,32 +292,54 @@ export default function BookDeliveryPage() {
                         </Box>
 
                         <Box>
-                            <Heading size="md" mb={4}>
-                                To customer (delivery)
+                            <Heading size="md" mb={2}>
+                                Delivery destination
                             </Heading>
+                            <Text fontSize="sm" color="gray.600" mb={4}>
+                                Who should receive the parcel? If you do not know
+                                the person yet, choose <strong>Any</strong>.
+                            </Text>
+                            <Checkbox
+                                name="recipientAny"
+                                value="true"
+                                isChecked={recipientAny}
+                                onChange={(e) =>
+                                    setRecipientAny(e.target.checked)
+                                }
+                                mb={4}
+                                colorScheme="primary"
+                            >
+                                Recipient: Any (I do not know the customer yet)
+                            </Checkbox>
                             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                                <FormControl isRequired>
-                                    <FormLabel>Customer name</FormLabel>
-                                    <Input
-                                        name="customerName"
-                                        defaultValue={
-                                            actionData?.fields?.customerName
-                                        }
-                                        placeholder="Ama Boateng"
-                                        bg="white"
-                                    />
-                                </FormControl>
-                                <FormControl isRequired>
-                                    <FormLabel>Customer phone</FormLabel>
-                                    <Input
-                                        name="customerPhone"
-                                        defaultValue={
-                                            actionData?.fields?.customerPhone
-                                        }
-                                        placeholder="020XXXXXXX"
-                                        bg="white"
-                                    />
-                                </FormControl>
+                                {!recipientAny ? (
+                                    <>
+                                        <FormControl isRequired>
+                                            <FormLabel>Customer name</FormLabel>
+                                            <Input
+                                                name="customerName"
+                                                defaultValue={
+                                                    actionData?.fields
+                                                        ?.customerName
+                                                }
+                                                placeholder="Ama Boateng"
+                                                bg="white"
+                                            />
+                                        </FormControl>
+                                        <FormControl isRequired>
+                                            <FormLabel>Customer phone</FormLabel>
+                                            <Input
+                                                name="customerPhone"
+                                                defaultValue={
+                                                    actionData?.fields
+                                                        ?.customerPhone
+                                                }
+                                                placeholder="020XXXXXXX"
+                                                bg="white"
+                                            />
+                                        </FormControl>
+                                    </>
+                                ) : null}
                                 <FormControl isRequired gridColumn={{ md: 'span 2' }}>
                                     <FormLabel>Delivery area</FormLabel>
                                     <input
@@ -312,14 +354,32 @@ export default function BookDeliveryPage() {
                                         onChange={onDeliveryArea}
                                     />
                                 </FormControl>
-                                <FormControl isRequired gridColumn={{ md: 'span 2' }}>
-                                    <FormLabel>Delivery address</FormLabel>
+                                <FormControl
+                                    isRequired={!recipientAny}
+                                    gridColumn={{ md: 'span 2' }}
+                                >
+                                    <FormLabel>
+                                        Delivery address{' '}
+                                        {recipientAny ? (
+                                            <Text
+                                                as="span"
+                                                color="gray.500"
+                                                fontSize="sm"
+                                            >
+                                                optional for now
+                                            </Text>
+                                        ) : null}
+                                    </FormLabel>
                                     <Input
                                         name="customerAddress"
                                         defaultValue={
                                             actionData?.fields?.customerAddress
                                         }
-                                        placeholder="House / street / landmark"
+                                        placeholder={
+                                            recipientAny
+                                                ? 'Optional — fill later if unknown'
+                                                : 'House / street / landmark'
+                                        }
                                         bg="white"
                                     />
                                 </FormControl>
@@ -406,30 +466,44 @@ export default function BookDeliveryPage() {
                             p={5}
                         >
                             <Text fontWeight="semibold" mb={2}>
-                                Estimated charge
+                                Estimated SendGH charges
                             </Text>
                             <Text color="gray.600" fontSize="sm" mb={3}>
-                                Final fee is calculated on the server from delivery
-                                area and weight.
+                                Delivery fee is what you pay SendGH. Cash on
+                                delivery is collected from the customer; SendGH
+                                keeps a <strong>1% COD commission</strong> from
+                                that amount.
                             </Text>
                             <Stack spacing={1} fontSize="sm">
                                 <Text>
-                                    Delivery:{' '}
+                                    Delivery fee:{' '}
                                     <Text as="span" fontWeight="bold">
                                         GHS {deliveryCharge.toFixed(2)}
                                     </Text>
                                 </Text>
-                                {codFee > 0 ? (
-                                    <Text>
-                                        COD fee:{' '}
-                                        <Text as="span" fontWeight="bold">
-                                            GHS {codFee.toFixed(2)}
+                                {cash > 0 ? (
+                                    <>
+                                        <Text>
+                                            COD to collect from customer:{' '}
+                                            <Text as="span" fontWeight="bold">
+                                                GHS {cash.toFixed(2)}
+                                            </Text>
                                         </Text>
-                                    </Text>
+                                        <Text>
+                                            COD commission (1% to SendGH):{' '}
+                                            <Text as="span" fontWeight="bold">
+                                                GHS {codFee.toFixed(2)}
+                                            </Text>
+                                        </Text>
+                                    </>
                                 ) : null}
                                 <Text fontSize="lg" pt={2}>
-                                    Total:{' '}
-                                    <Text as="span" fontWeight="extrabold" color="primary.600">
+                                    Total SendGH charge:{' '}
+                                    <Text
+                                        as="span"
+                                        fontWeight="extrabold"
+                                        color="primary.600"
+                                    >
                                         GHS {totalCharge.toFixed(2)}
                                     </Text>
                                 </Text>

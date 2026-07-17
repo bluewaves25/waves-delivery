@@ -103,4 +103,13 @@ export class PaymentsController {
     const entries = await this.paymentsService.ledgerForUser(req.user.id);
     return { data: entries };
   }
+
+  @Get('rider-earnings')
+  @UseGuards(JwtAuthGuard)
+  async riderEarnings(@Request() req) {
+    const summary = await this.paymentsService.riderEarningsSummary(
+      req.user.id,
+    );
+    return { data: summary };
+  }
 }

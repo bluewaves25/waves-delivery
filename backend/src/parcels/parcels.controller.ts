@@ -27,8 +27,8 @@ import { ParcelShopGuard } from './guard/parcelShop.guard';
 import { ParcelsService } from './parcels.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { RealtimeGateway } from 'src/realtime/realtime.gateway';
+import { PaymentsService } from 'src/payments/payments.service';
 import { IsOptional, IsString } from 'class-validator';
-
 class DeliverParcelDto {
   @IsOptional()
   @IsString()
@@ -50,6 +50,7 @@ export class ParcelsController {
     private filedPackageHandlersService: FiledPackageHandlersService,
     private notificationsService: NotificationsService,
     private realtimeGateway: RealtimeGateway,
+    private paymentsService: PaymentsService,
   ) {}
 
   // GET /parcels
@@ -702,17 +703,28 @@ export class ParcelsController {
   @Patch('packagehandler/delivered/:parcelNumber')
   @UseGuards(JwtAuthGuard)
   async parcelsDeliveredByDeliveryman(
+    @Request() req,
     @Param('parcelNumber') parcelNumber: string,
     @Body(new ValidationPipe({ whitelist: true, transform: true }))
     body: DeliverParcelDto = {},
   ) {
     try {
-      const existing = await this.parcelsService.parcel({ parcelNumber });
+      const existing: any = await this.parcelsService.parcel(
+        { parcelNumber },
+        {
+          include: {
+            FieldPackageHandler: true,
+          },
+        },
+      );
       if (!existing) {
         throw new NotFoundException(
           `Parcel with number ${parcelNumber} not found`,
         );
       }
+
+      const riderUserId =
+        existing.FieldPackageHandler?.userId || req.user?.id || null;
 
       const otpVerified = Boolean(body.deliveryOtp);
       const result = await this.parcelsService.updateParcel({
@@ -755,6 +767,18 @@ export class ParcelsController {
         otpVerified,
       });
 
+      let settlement = null;
+      if (riderUserId) {
+        settlement = await this.paymentsService.settleParcelDelivery({
+          parcelNumber,
+          parcelId: existing.id,
+          parcelUserId: existing.parcelUserId,
+          riderUserId,
+          parcelCashCollection: existing.parcelCashCollection,
+          parcelCharge: existing.parcelCharge,
+        });
+      }
+
       await this.notificationsService.notifyParcelStatusChange({
         customerPhone: existing.customerPhone,
         merchantUserId: existing.parcelUserId,
@@ -763,7 +787,7 @@ export class ParcelsController {
         message: 'Your parcel has been delivered.',
       });
 
-      return result;
+      return { data: result, settlement };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
