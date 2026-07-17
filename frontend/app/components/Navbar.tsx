@@ -18,34 +18,28 @@ import {
     DrawerBody,
     Link,
     Button,
-    Icon,
 } from '@chakra-ui/react'
 import { CloseIcon, HamburgerIcon } from '@chakra-ui/icons'
 import { Link as RemixLink } from '@remix-run/react'
-import { BsFillTelephoneFill } from 'react-icons/bs'
 
 const Links = [
-    { label: 'Track', to: '/track/lookup' },
-    { label: 'Login', to: '/login' },
-    { label: 'Register', to: '/register' },
+    { label: 'Track a parcel', to: '/track/lookup' },
+    { label: 'Book a delivery', to: '/book' },
+    { label: 'Log in', to: '/login' },
+    { label: 'Sign up', to: '/register' },
 ]
 
-const NavLink = ({
-    children,
-    to,
-}: {
-    children: ReactNode
-    to: string
-}) => (
+const NavLink = ({ children, to }: { children: ReactNode; to: string }) => (
     <Link
         as={RemixLink}
         to={to}
         px={2}
         py={1}
-        rounded={'md'}
+        rounded="md"
+        fontWeight="medium"
         _hover={{
             textDecoration: 'none',
-            bg: useColorModeValue('gray.200', 'gray.700'),
+            bg: useColorModeValue('gray.100', 'gray.700'),
         }}
     >
         {children}
@@ -55,129 +49,105 @@ const NavLink = ({
 export default function Navbar() {
     const { isOpen, onOpen, onClose } = useDisclosure()
     return (
-        <>
-            <Box
-                as="nav"
-                bg={useColorModeValue('white', 'gray.900')}
-                py={3}
-                borderBottom="1px"
-                borderColor="gray.200"
-            >
-                <Container maxW="container.xl">
-                    <Flex
-                        h={16}
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                    >
-                        <Flex align="center">
-                            <Stack
-                                direction="row"
-                                align="center"
-                                spacing={{ md: 0, base: 2 }}
-                            >
-                                <IconButton
-                                    variant="outline"
-                                    size={'md'}
-                                    icon={
-                                        isOpen ? (
-                                            <CloseIcon />
-                                        ) : (
-                                            <HamburgerIcon />
-                                        )
-                                    }
-                                    aria-label={'Open Menu'}
-                                    display={{ md: 'none' }}
-                                    onClick={isOpen ? onClose : onOpen}
-                                />
-                                <HStack alignItems={'center'}>
-                                    <Box>
-                                        <Link
-                                            as={RemixLink}
-                                            to="/"
-                                            fontWeight="extrabold"
-                                            fontSize="4xl"
-                                            mb="0"
-                                            _hover={{ textDecoration: 'unset' }}
-                                        >
-                                            Send
-                                            <Text
-                                                color="primary.500"
-                                                display="inline"
-                                            >
-                                                GH
-                                            </Text>
-                                        </Link>
-                                    </Box>
-                                </HStack>
-                            </Stack>
-                        </Flex>
-
-                        <Flex alignItems={'center'}>
-                            <Stack direction={'row'} spacing={7}>
-                                <HStack
-                                    as={'nav'}
-                                    spacing={4}
-                                    display={{ base: 'none', md: 'flex' }}
-                                    ml="auto"
-                                >
-                                    <Flex align="center" gap="2">
-                                        <Icon
-                                            as={BsFillTelephoneFill}
-                                            fontSize="2xl"
-                                            color="primary.500"
-                                        />{' '}
-                                        <Text as="span">CALL US</Text>
-                                        <Link
-                                            href="tel:+233302123456"
-                                            color="primary.500"
-                                            fontWeight="bold"
-                                        >
-                                            +233 30 212 3456
-                                        </Link>
-                                    </Flex>
-                                    <Button
-                                        colorScheme="primary"
-                                        fontWeight="normal"
-                                        variant="outline"
-                                        px="8"
-                                        size="lg"
-                                        as={RemixLink}
-                                        to="/login"
-                                    >
-                                        Log in
-                                    </Button>
-                                </HStack>
-                            </Stack>
-                        </Flex>
+        <Box
+            as="nav"
+            bg={useColorModeValue('white', 'gray.900')}
+            py={3}
+            borderBottom="1px"
+            borderColor="gray.200"
+        >
+            <Container maxW="container.xl">
+                <Flex h={16} alignItems="center" justifyContent="space-between">
+                    <Flex align="center" gap={2}>
+                        <IconButton
+                            variant="outline"
+                            size="md"
+                            icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
+                            aria-label="Open Menu"
+                            display={{ md: 'none' }}
+                            onClick={isOpen ? onClose : onOpen}
+                        />
+                        <Link
+                            as={RemixLink}
+                            to="/"
+                            fontWeight="extrabold"
+                            fontSize={{ base: '3xl', md: '4xl' }}
+                            lineHeight="1"
+                            _hover={{ textDecoration: 'none' }}
+                        >
+                            Send
+                            <Text as="span" color="primary.500">
+                                GH
+                            </Text>
+                        </Link>
                     </Flex>
-                </Container>
-                <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
-                    <DrawerOverlay />
-                    <DrawerContent>
-                        <DrawerCloseButton />
-                        <DrawerHeader>
-                            <Box>
-                                <Heading fontWeight="extrabold">
-                                    Send
-                                    <Text color="primary.500" display="inline">
-                                        GH
-                                    </Text>
-                                </Heading>
-                            </Box>
-                        </DrawerHeader>
 
-                        <DrawerBody>
-                            <Stack as={'nav'} spacing={4}>
-                                {Links.map((link) => (
-                                    <NavLink key={link.to} to={link.to}>
-                                        {link.label}
-                                    </NavLink>
-                                ))}
-                            </Stack>
-                        </DrawerBody>
-                    </DrawerContent>
-                </Drawer>
-            </Box>
-        </>
+                    <HStack
+                        as="nav"
+                        spacing={1}
+                        display={{ base: 'none', md: 'flex' }}
+                        align="center"
+                    >
+                        <Button
+                            as={RemixLink}
+                            to="/track/lookup"
+                            variant="ghost"
+                            fontWeight="medium"
+                        >
+                            Track
+                        </Button>
+                        <Button
+                            as={RemixLink}
+                            to="/book"
+                            variant="ghost"
+                            fontWeight="medium"
+                        >
+                            Book delivery
+                        </Button>
+                        <Button
+                            as={RemixLink}
+                            to="/login"
+                            variant="outline"
+                            colorScheme="primary"
+                            fontWeight="medium"
+                        >
+                            Log in
+                        </Button>
+                        <Button
+                            as={RemixLink}
+                            to="/register"
+                            colorScheme="primary"
+                            fontWeight="medium"
+                        >
+                            Sign up
+                        </Button>
+                    </HStack>
+                </Flex>
+            </Container>
+
+            <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+                <DrawerOverlay />
+                <DrawerContent>
+                    <DrawerCloseButton />
+                    <DrawerHeader>
+                        <Heading fontWeight="extrabold" size="lg">
+                            Send
+                            <Text as="span" color="primary.500">
+                                GH
+                            </Text>
+                        </Heading>
+                    </DrawerHeader>
+                    <DrawerBody>
+                        <Stack as="nav" spacing={4} onClick={onClose}>
+                            {Links.map((link) => (
+                                <NavLink key={link.to} to={link.to}>
+                                    {link.label}
+                                </NavLink>
+                            ))}
+                        </Stack>
+                    </DrawerBody>
+                </DrawerContent>
+            </Drawer>
+        </Box>
     )
 }

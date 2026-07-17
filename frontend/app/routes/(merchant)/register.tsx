@@ -8,13 +8,14 @@ import { redirect } from '@remix-run/node'
 import { Box } from '@chakra-ui/react'
 import LoginRegLeftSide from '~/components/common/loginRegLeftSide'
 import Layout from '~/components/Layout'
+import DemoCredentials from '~/components/common/DemoCredentials'
 import RegisterForm from '~/components/merchant/RegisterForm'
 import { validateEmail, validatePassword, badRequest } from '~/utils'
 import { getUserId, register } from '~/utils/session.server'
 import { useActionData, useTransition } from '@remix-run/react'
 
 export const meta: MetaFunction = () => ({
-    title: 'Register',
+    title: 'Sign up to send — SendGH',
 })
 
 function validateConfirmPassword({
@@ -157,15 +158,18 @@ function Register() {
         <Layout>
             <div className="md:flex">
                 <LoginRegLeftSide
-                    title="Add your information"
-                    subtitle="Please tell a bit about you and your business"
+                    title="Start sending with SendGH"
+                    subtitle="Create your shop account, then book pickups and deliveries across Ghana."
                 />
 
-                <Box className="flex md:w-1/2 justify-center items-center bg-white overflow-y-auto h-full">
+                <Box className="flex md:w-1/2 justify-center items-center bg-white overflow-y-auto h-full flex-col">
                     <RegisterForm
                         actionData={actionData}
                         transition={transition}
                     />
+                    <Box className="w-3/4 lg:w-3/4 pb-10">
+                        <DemoCredentials variant="all" compact />
+                    </Box>
                 </Box>
             </div>
         </Layout>

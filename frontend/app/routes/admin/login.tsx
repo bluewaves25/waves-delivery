@@ -22,6 +22,7 @@ import {
     useTransition,
 } from '@remix-run/react'
 import type { ApiErrorResponse, LoginResponse } from '~/types'
+import DemoCredentials, { DEMO } from '~/components/common/DemoCredentials'
 import {
     badRequest,
     validateEmail,
@@ -130,7 +131,7 @@ function Login() {
                     <div className="flex items-center justify-center p-6 sm:p-12 md:w-1/2">
                         <div className="w-full">
                             <h1 className="mb-4 text-xl font-semibold text-gray-700 dark:text-gray-200">
-                                Login
+                                SendGH Admin
                             </h1>
                             <Form method="post">
                                 <Box id="form-error-message" mb="5">
@@ -169,10 +170,13 @@ function Login() {
                                     <Input
                                         type="email"
                                         name="email"
-                                        placeholder="maruf@gmail.com"
+                                        placeholder={DEMO.admin.email}
                                         focusBorderColor="primary.500"
                                         className="dark:text-white"
-                                        defaultValue={actionData?.fields?.email}
+                                        defaultValue={
+                                            actionData?.fields?.email ||
+                                            DEMO.admin.email
+                                        }
                                         aria-errormessage={
                                             actionData?.fieldErrors?.email
                                                 ? 'email-error'
@@ -202,7 +206,8 @@ function Login() {
                                         <Input
                                             type={show ? 'text' : 'password'}
                                             name="password"
-                                            placeholder="Enter password"
+                                            placeholder={DEMO.password}
+                                            defaultValue={DEMO.password}
                                             focusBorderColor="primary.500"
                                             aria-invalid={
                                                 Boolean(
@@ -245,12 +250,13 @@ function Login() {
                                     name="_action"
                                     value="login"
                                     className="w-full mt-8"
-                                    colorScheme="purple"
+                                    colorScheme="primary"
                                     isLoading={isSubmitting}
                                 >
                                     Log in
                                 </Button>
                             </Form>
+                            <DemoCredentials variant="all" compact />
                         </div>
                     </div>
                 </div>

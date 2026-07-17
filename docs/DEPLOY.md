@@ -1,65 +1,66 @@
-# Deploy guide — Vercel vs Render
+# Deploy guide — Render (SendGH)
 
-## Short answer
+## Live services
 
-| Platform | Use for this project? | Why |
+| Service | URL | Notes |
 |---|---|---|
-| **Render (recommended)** | **Yes — full app** | Runs NestJS as a real Node server, persistent disk for SQLite, WebSockets OK |
-| **Vercel** | **Not for the full stack** | Fine for static/Remix UI later. **Bad** for Nest + Socket.IO + rider GPS realtime (serverless, no long-lived WS, no SQLite disk) |
+| Web | https://dpdms-web.onrender.com | Remix frontend |
+| API | https://dpdms-api.onrender.com | NestJS + SQLite |
 
-**Create a Render account now:** https://dashboard.render.com/register  
-(GitHub login is easiest.)
+Repo: https://github.com/bluewaves25/waves-delivery  
 
-Do **not** put the Nest API on Vercel for this app.
+Full test checklist: [TESTING.md](./TESTING.md)
 
 ---
 
-## What was prepared in this repo
+## Why Render (not Vercel for the API)
+
+| Platform | Use? | Why |
+|---|---|---|
+| **Render** | **Yes — full app** | NestJS Node server, SQLite, WebSockets OK |
+| **Vercel** | UI only (optional) | Bad for Nest + Socket.IO + SQLite disk |
+
+---
+
+## What’s in the repo
 
 - `render.yaml` — Blueprint for **dpdms-api** + **dpdms-web**
-- Backend `npm run build` / `npm run render:start` (migrate + start)
+- Backend `npm run build` / `npm run render:start` (migrate + auto-seed if empty + start)
 - Frontend production build + `render:start`
-- This guide: `docs/DEPLOY.md`
 
 ---
 
-## Deploy on Render (do this)
+## Deploy / update
 
-### 1. Accounts
-1. Create **GitHub** account (if needed) and push this project to a new repo  
-2. Create **Render** account: https://dashboard.render.com/register  
-3. In Render: **New → Blueprint** → select your GitHub repo → Apply `render.yaml`
-
-### 2. After first deploy
-1. Copy the **dpdms-api** public URL (e.g. `https://dpdms-api.onrender.com`)
-2. On **dpdms-web** → Environment → set:
+1. Push to `main` on GitHub — Render auto-deploys linked services.  
+2. Confirm **dpdms-web** env has:
    ```
-   API_BASE_URL=https://YOUR-dpdms-api.onrender.com
+   API_BASE_URL=https://dpdms-api.onrender.com
+   SESSION_SECRET=<long random string>
    ```
-   (no trailing slash), then **Manual Deploy** the web service
-3. Open the **dpdms-web** URL in your browser
-4. In Render **Shell** for `dpdms-api`, seed once:
-   ```bash
-   npm run seed
-   node scripts/ensure-demo-parcel.js
-   ```
+   (no trailing slash on API URL)
+3. Wait until both services show **Live**, then follow [TESTING.md](./TESTING.md).
 
-### 3. Free-tier notes
-- Free services **sleep** after idle ~15 minutes (first request can take 30–60s)
-- SQLite lives on the Render **disk** at `/var/data/prod.db`
-- For Ghana production later: move to **MySQL/Postgres + Redis** on a paid plan or DigitalOcean
+### First-boot seeding
 
----
+`backend/scripts/render-bootstrap.js` runs on API start:
 
-## If you still want Vercel later
+1. `prisma migrate deploy`
+2. If users/areas/shops missing → Ghana location seed + user seed + demo parcel
+3. `node dist/main`
 
-Only after API is on Render, and only for the **frontend**:
+Manual reseed (Render Shell, if available on your plan):
 
-1. Vercel project → root directory `frontend`  
-2. Env: `API_BASE_URL=https://YOUR-dpdms-api.onrender.com`  
-3. Env: `SESSION_SECRET=<long random string>`  
+```bash
+npm run seed
+node scripts/ensure-demo-parcel.js
+```
 
-Remix on Vercel may need a Vercel adapter upgrade; **Render hosting both is simpler today.**
+### Free-tier notes
+
+- Services **sleep** after ~15 minutes idle (cold start 30–60s)
+- Without a **persistent disk**, SQLite under `file:./prod.db` can reset on redeploy
+- For production: attach disk (`DATABASE_URL=file:/var/data/prod.db`) or move to Postgres + Redis
 
 ---
 
@@ -70,4 +71,4 @@ cd backend && npm run build
 cd ../frontend && npm run build
 ```
 
-Local demo remains: http://localhost:3000 (API http://localhost:8000)
+Local demo: http://localhost:3000 (API http://localhost:8000)

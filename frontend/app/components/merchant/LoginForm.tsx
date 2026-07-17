@@ -2,6 +2,7 @@ import React from 'react'
 import type { ActionData } from '~/routes/(merchant)/login'
 import type { Transition } from '@remix-run/react/dist/transition'
 import { Form, Link as RemixLink } from '@remix-run/react'
+import DemoCredentials, { DEMO } from '~/components/common/DemoCredentials'
 import {
     FormControl,
     FormLabel,
@@ -64,9 +65,9 @@ function LoginForm({
                 <Input
                     type="email"
                     name="email"
-                    placeholder="maruf@gmail.com"
+                    placeholder={DEMO.merchant.email}
                     focusBorderColor="primary.500"
-                    defaultValue={actionData?.fields?.email}
+                    defaultValue={actionData?.fields?.email || DEMO.merchant.email}
                     aria-errormessage={
                         actionData?.fieldErrors?.email
                             ? 'email-error'
@@ -91,7 +92,8 @@ function LoginForm({
                     <Input
                         type={show ? 'text' : 'password'}
                         name="password"
-                        placeholder="Enter password"
+                        placeholder={DEMO.password}
+                        defaultValue={DEMO.password}
                         focusBorderColor="primary.500"
                         aria-invalid={
                             Boolean(actionData?.fieldErrors?.password) ||
@@ -149,6 +151,7 @@ function LoginForm({
                     Create account
                 </Link>
             </Text>
+            <DemoCredentials variant="all" compact />
         </Form>
     )
 }

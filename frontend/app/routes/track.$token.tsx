@@ -1,10 +1,27 @@
 import type { LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Form, useLoaderData, useSearchParams } from '@remix-run/react'
+import { Form, Link as RemixLink, useLoaderData, useSearchParams } from '@remix-run/react'
+import {
+    Alert,
+    AlertIcon,
+    Box,
+    Button,
+    Container,
+    Divider,
+    Flex,
+    Heading,
+    Input,
+    Link,
+    Stack,
+    Text,
+    VStack,
+} from '@chakra-ui/react'
 import axios from 'axios'
+import Layout from '~/components/Layout'
+import DemoCredentials, { DEMO } from '~/components/common/DemoCredentials'
 
 export const meta: MetaFunction = () => ({
-    title: 'Track parcel',
+    title: 'Track a parcel — SendGH',
 })
 
 export async function loader({ params, request }: LoaderArgs) {
@@ -33,94 +50,143 @@ export default function TrackParcelPage() {
     const [searchParams] = useSearchParams()
 
     return (
-        <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10">
-            <div className="mx-auto max-w-xl">
-                <p className="text-sm uppercase tracking-[0.2em] text-cyan-400">
-                    Delivery tracking
-                </p>
-                <h1 className="mt-2 text-3xl font-semibold">Track your parcel</h1>
-                <p className="mt-2 text-slate-400">
-                    Enter the tracking link token or parcel number. No login required.
-                </p>
+        <Layout>
+            <Box bg="gray.50" minH="70vh">
+                <Container maxW="container.md" py={{ base: 10, md: 14 }}>
+                    <Stack spacing={6}>
+                        <Stack spacing={2}>
+                            <Text
+                                fontSize="sm"
+                                fontWeight="bold"
+                                color="primary.500"
+                                letterSpacing="wider"
+                                textTransform="uppercase"
+                            >
+                                Track
+                            </Text>
+                            <Heading size="xl">Track your parcel</Heading>
+                            <Text color="gray.600">
+                                Enter the parcel number or tracking token. No login required.
+                                Need to send something?{' '}
+                                <Link as={RemixLink} to="/book" color="primary.500" fontWeight="semibold">
+                                    Book a delivery
+                                </Link>
+                                .
+                            </Text>
+                        </Stack>
 
-                <Form method="get" action="/track/lookup" className="mt-6 flex gap-2">
-                    <input
-                        type="text"
-                        name="q"
-                        defaultValue={searchParams.get('q') || token || ''}
-                        placeholder="Tracking token or parcel number"
-                        className="flex-1 rounded-md border border-slate-700 bg-slate-900 px-3 py-2"
-                    />
-                    <button
-                        type="submit"
-                        className="rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950"
-                    >
-                        Track
-                    </button>
-                </Form>
+                        <Form method="get" action="/track/lookup">
+                            <Flex direction={{ base: 'column', sm: 'row' }} gap={0}>
+                                <Input
+                                    type="text"
+                                    name="q"
+                                    defaultValue={searchParams.get('q') || token || ''}
+                                    placeholder={`e.g. ${DEMO.track}`}
+                                    bg="white"
+                                    size="lg"
+                                    roundedRight={{ sm: 'none' }}
+                                />
+                                <Button
+                                    type="submit"
+                                    colorScheme="primary"
+                                    size="lg"
+                                    roundedLeft={{ sm: 'none' }}
+                                    px={8}
+                                >
+                                    Track
+                                </Button>
+                            </Flex>
+                        </Form>
 
-                {error ? (
-                    <p className="mt-6 rounded-md border border-rose-500/40 bg-rose-950/40 px-4 py-3 text-rose-200">
-                        {error}
-                    </p>
-                ) : null}
+                        <DemoCredentials variant="all" compact />
 
-                {parcel ? (
-                    <section className="mt-8 space-y-4">
-                        <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                            <p className="text-sm text-slate-400">Parcel</p>
-                            <p className="text-xl font-medium">{parcel.parcelNumber}</p>
-                            <p className="mt-2 text-cyan-300">
-                                Status: {parcel.status?.name || 'unknown'}
-                            </p>
-                            <p className="mt-1 text-slate-300">{parcel.customerAddress}</p>
-                            {parcel.customerLatitude != null &&
-                            parcel.customerLongitude != null ? (
-                                <p className="mt-1 text-sm text-slate-500">
-                                    Drop-off pin: {parcel.customerLatitude},{' '}
-                                    {parcel.customerLongitude}
-                                </p>
-                            ) : null}
-                        </div>
-
-                        {parcel.rider ? (
-                            <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                                <p className="text-sm text-slate-400">Rider</p>
-                                <p className="font-medium">{parcel.rider.name}</p>
-                                <p className="text-slate-400">{parcel.rider.phone}</p>
-                                {parcel.rider.latitude != null ? (
-                                    <p className="mt-1 text-sm text-emerald-300">
-                                        Live: {parcel.rider.latitude}, {parcel.rider.longitude}
-                                    </p>
-                                ) : (
-                                    <p className="mt-1 text-sm text-slate-500">
-                                        Location not available yet
-                                    </p>
-                                )}
-                            </div>
+                        {error ? (
+                            <Alert status="error" borderRadius="md">
+                                <AlertIcon />
+                                {error}
+                            </Alert>
                         ) : null}
 
-                        <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                            <p className="mb-3 text-sm text-slate-400">Timeline</p>
-                            <ol className="space-y-3">
-                                {(parcel.timeline || []).map((item: any) => (
-                                    <li key={item.id} className="border-l border-slate-700 pl-3">
-                                        <p className="font-medium">
-                                            {item.parcelStatus?.name || 'update'}
-                                        </p>
-                                        <p className="text-sm text-slate-400">{item.message}</p>
-                                        {item.proofPhotoUrl ? (
-                                            <p className="text-xs text-cyan-400">
-                                                POD photo attached
-                                            </p>
-                                        ) : null}
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    </section>
-                ) : null}
-            </div>
-        </main>
+                        {parcel ? (
+                            <Stack spacing={5}>
+                                <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
+                                    <Text fontSize="sm" color="gray.500">
+                                        Parcel
+                                    </Text>
+                                    <Heading size="md" mt={1}>
+                                        {parcel.parcelNumber}
+                                    </Heading>
+                                    <Text mt={3} fontWeight="semibold" color="primary.600">
+                                        Status: {parcel.status?.name || 'unknown'}
+                                    </Text>
+                                    <Text mt={1} color="gray.700">
+                                        {parcel.customerAddress}
+                                    </Text>
+                                    {parcel.customerLatitude != null &&
+                                    parcel.customerLongitude != null ? (
+                                        <Text mt={1} fontSize="sm" color="gray.500">
+                                            Drop-off: {parcel.customerLatitude},{' '}
+                                            {parcel.customerLongitude}
+                                        </Text>
+                                    ) : null}
+                                </Box>
+
+                                {parcel.rider ? (
+                                    <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
+                                        <Text fontSize="sm" color="gray.500">
+                                            Rider
+                                        </Text>
+                                        <Text fontWeight="semibold" mt={1}>
+                                            {parcel.rider.name}
+                                        </Text>
+                                        <Text color="gray.600">{parcel.rider.phone}</Text>
+                                        {parcel.rider.latitude != null ? (
+                                            <Text mt={1} fontSize="sm" color="green.600">
+                                                Live location: {parcel.rider.latitude},{' '}
+                                                {parcel.rider.longitude}
+                                            </Text>
+                                        ) : (
+                                            <Text mt={1} fontSize="sm" color="gray.500">
+                                                Location not available yet
+                                            </Text>
+                                        )}
+                                    </Box>
+                                ) : null}
+
+                                <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
+                                    <Text fontSize="sm" color="gray.500" mb={3}>
+                                        Timeline
+                                    </Text>
+                                    <VStack align="stretch" spacing={4} divider={<Divider />}>
+                                        {(parcel.timeline || []).map((item: any) => (
+                                            <Box key={item.id}>
+                                                <Text fontWeight="semibold">
+                                                    {item.parcelStatus?.name || 'update'}
+                                                </Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    {item.message}
+                                                </Text>
+                                                {item.proofPhotoUrl ? (
+                                                    <Text fontSize="xs" color="primary.500" mt={1}>
+                                                        Proof of delivery attached
+                                                    </Text>
+                                                ) : null}
+                                            </Box>
+                                        ))}
+                                    </VStack>
+                                </Box>
+                            </Stack>
+                        ) : null}
+
+                        <Text fontSize="sm" color="gray.500">
+                            Staff or shop accounts:{' '}
+                            <Link as={RemixLink} to="/login" color="primary.500">
+                                Log in
+                            </Link>
+                        </Text>
+                    </Stack>
+                </Container>
+            </Box>
+        </Layout>
     )
 }

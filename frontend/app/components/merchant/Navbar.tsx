@@ -165,7 +165,7 @@ export default function MerchantNav() {
                                         as={RemixLink}
                                         to="/create-parcel"
                                     >
-                                        Create Parcel
+                                        Book delivery
                                     </Button>
                                 </HStack>
                                 {/* <Button

@@ -20,7 +20,7 @@ import Layout from '~/components/Layout'
 import { useShopProvider } from '~/context/ShopProvider'
 
 export const meta: MetaFunction = () => ({
-    title: 'Login',
+    title: 'Merchant login — SendGH',
 })
 
 export type ActionData = {
@@ -102,8 +102,8 @@ export default function Login() {
         <Layout>
             <div className="h-screen md:flex">
                 <LoginRegLeftSide
-                    title="Welcome!"
-                    subtitle="Enter your email and password to login to the dashboard"
+                    title="Merchant login"
+                    subtitle="Book deliveries, manage parcels, and share tracking links from your dashboard."
                 />
 
                 <div className="flex md:w-1/2 justify-center py-10 items-center bg-white">

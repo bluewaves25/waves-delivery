@@ -1,53 +1,55 @@
-![React Js Next Js Remix Js Tailwind Css website development png](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/ebec87ff-2595-4863-8146-0985301ca262)
+# SendGH — Delivery across Ghana
 
-# Delivery Management System
+Nationwide pickup and delivery platform (NestJS API + Remix web + Expo rider app).
 
-### [Demo](https://dpdms.up.railway.app/)
+## Live demo
 
-Demo credential
+| Service | URL |
+|---|---|
+| **Web** | https://dpdms-web.onrender.com |
+| **API** | https://dpdms-api.onrender.com |
+| **Repo** | https://github.com/bluewaves25/waves-delivery |
 
-```
-Merchant panel
-email: maruffamd@gmail.com
-password: 123456
+> Free Render services sleep after ~15 minutes idle. First load can take 30–60s.
 
-Admin panel
-URLpath: /admin
-email: admin@gmail.com
-password:123456
+## Demo credentials
 
-Package handler panel (Pickup man)
-URLpath: /packagehandler
-email: reyad@gmail.com
-password:123456
+Password for **all** accounts: `123456`
 
-Package handler panel (Delivery man)
-URLpath: /packagehandler
-email: tushar@gmail.com
-password:123456
-```
+| Role | Email | Login URL |
+|---|---|---|
+| Merchant (book parcels) | `maruffamd@gmail.com` | [/login](https://dpdms-web.onrender.com/login) |
+| Admin | `admin@gmail.com` | [/admin/login](https://dpdms-web.onrender.com/admin/login) |
+| Pickup rider | `reyad@gmail.com` | [/packagehandler/login](https://dpdms-web.onrender.com/packagehandler/login) |
+| Delivery rider | `tushar@gmail.com` | [/packagehandler/login](https://dpdms-web.onrender.com/packagehandler/login) |
+| Public tracking | parcel `DEMO-TRACK-001` | [/track/DEMO-TRACK-001](https://dpdms-web.onrender.com/track/DEMO-TRACK-001) |
 
-## Getting Started
+Full click-through checklist: **[docs/TESTING.md](docs/TESTING.md)**  
+Deploy notes: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 
-This instruction will get you a copy of this project up and running on your local machine
+## What visitors can do
+
+1. **Track** — no account; enter parcel number / tracking token  
+2. **Book a delivery** — merchant sign-up → dashboard → Book delivery  
+3. **Staff** — admin and rider panels at `/admin` and `/packagehandler`
+
+## Getting started (local)
 
 ### Prerequisites
 
-You need [Node JS](https://nodejs.org) (v18.x.x or v20.x.x) installed on your local machine.
+- [Node.js](https://nodejs.org) v18 or v20  
 
-> **Note:** This local setup uses **SQLite** (no MySQL/Docker required). The database file is created at `backend/prisma/dev.db`.
+> Local setup uses **SQLite** (`backend/prisma/dev.db`). No MySQL/Docker required.
 
-### Installing ⚙️
-
-Run the followning command to install all the packages:
+### Install
 
 ```sh
 npm run setup
 ```
 
-#### Setup Environment Variable
+### Environment
 
-Set the following environment variable to `backend` directory. Also, an example file is given with the name of `.env.example`:
+**backend/.env**
 
 ```
 PORT=8000
@@ -56,65 +58,36 @@ JWT_SECRET=ANYTHING_YOU_LIKE
 BCRYPT_SALT_OR_ROUNDS=10
 ```
 
-Set the following environment variable to `frontend` directory. Also, an example file is given with the name of `.env.example`:
+**frontend/.env**
 
 ```
 SESSION_SECRET=dearMj
 API_BASE_URL=http://localhost:8000
 ```
 
-### Database Migration 💿
-
-Run the followning command to migrate the prisma schema:
+### Database
 
 ```sh
 npm run prisma:migrate
+cd backend && npm run seed
+# optional demo parcel:
+node scripts/ensure-demo-parcel.js
 ```
 
-You only have to run this for only one time at the beginning of project setup
-
-#### Seed Database 🌱
-
-Run the following command to seed your database with some preset dataset. It includes delivery area info (Division, Districs, Areas), Delivery zones, Parcel pricing (for 0.5KG, 1KG, 2KG, 3KG, 4KG, 5KG), Parcel products categories, Shop products categories, a default user and admin, etc.
-
-```sh
-cd backend
-npm run seed
-```
-
-#### Run 🏃🏻‍♂️
-
-By this command your app and server will be run concurrently
+### Run
 
 ```sh
 npm start
 ```
 
-An server will be run at http://localhost:8000 <br/>
-And frontend server will be run at http://localhost:3000
+- API: http://localhost:8000  
+- Web: http://localhost:3000  
 
-## Screenshots
+## Built with
 
-![screencapture-localhost-3000-dashboard-2023-06-01-12_32_30](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/ccfabd6d-d373-48a7-be38-f972f5b87f55)
-![screencapture-localhost-3000-create-parcel-2023-06-01-12_39_06](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/7f66aaac-773e-4119-94fe-1678f8eba033)
-![screencapture-localhost-3000-parcel-list-2023-06-01-12_39_44](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/00bea019-8104-4ded-aa21-64e77a98c8cb)
-![screencapture-localhost-3000-parcel-tracking-2023-06-01-12_38_51](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/7aef905c-c465-4485-9f31-ed575910e101)
-![screencapture-localhost-3000-payments-list-2023-06-01-12_39_52](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/3c69f6cc-7e6d-4cf0-a806-4922c6da8b7d)
-![screencapture-localhost-3000-shop-list-2023-06-01-12_39_59](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/13e29ab3-26f4-4d2a-977b-b5af724d3752)
-![screencapture-localhost-3000-shop-list-2023-06-01-12_40_11](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/442cd9fb-8558-44ff-8013-1388e32f8584)
-![screencapture-localhost-3000-settings-password-2023-06-01-12_40_33](https://github.com/maruffahmed/Delivery-management-system/assets/39343312/a1017fd5-d649-4c92-92fb-cbde1d49090c)
-
-## Built With 🏗️👷🏻
-
--   [NodeJs](https://nodejs.org/en/) - Node.js® is an open-source, cross-platform JavaScript runtime environment.
--   [NestJs](https://nestjs.com/) - A progressive Node.js framework for building efficient, reliable and scalable server-side applications.
--   [Prisma](https://nestjs.com/) - Next-generation Node.js and TypeScript ORM
--   [Remix](https://remix.run/) - Remix is a full stack web framework
--   [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework packed with classes
--   [Chakra UI](https://chakra-ui.com/) - Chakra UI is a simple, modular and accessible component library
-
-## Credit
+- [NestJS](https://nestjs.com/) · [Prisma](https://www.prisma.io/) · [Remix](https://remix.run/) · [Chakra UI](https://chakra-ui.com/) · [Tailwind CSS](https://tailwindcss.com/) · Expo (rider app under `mobile/`)
 
 ## Authors
 
--   **Md Maruf Ahmed** - _Software Engineer_
+- Original: **Md Maruf Ahmed**
+- Ghana localization / SendGH deploy: **bluewaves25**
