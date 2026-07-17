@@ -17,6 +17,18 @@ async function main() {
     });
   }
 
+  const demoArea =
+    (await prisma.areas.findFirst({ where: { name: 'Osu' } })) ||
+    (await prisma.areas.findFirst({ where: { name: 'East Legon' } })) ||
+    (await prisma.areas.findFirst());
+  if (!demoArea) {
+    throw new Error(
+      'No service areas found. Run ghanaLocationSeed before prisma/seed.ts',
+    );
+  }
+  const handlerAreaId = demoArea.id;
+  const demoAddress = `${demoArea.name}, Accra, Ghana`;
+
   const adminRoleId = await prisma.roleDescription.findUnique({
     where: { name: 'admin' },
   });
@@ -27,7 +39,7 @@ async function main() {
     create: {
       email: 'admin@gmail.com',
       name: 'Admin',
-      phone: '01789393745',
+      phone: '0200000001',
       password: '$2b$10$btodHpHti0d4gEB2zd1LdueFA1lJLISmdvNxOVuvQda5DfJDnHD1u',
       roles: {
         create: {
@@ -50,7 +62,7 @@ async function main() {
     create: {
       email: 'maruffamd@gmail.com',
       name: 'Maruf Ahmed',
-      phone: '01789393745',
+      phone: '0200000002',
       password: '$2b$10$btodHpHti0d4gEB2zd1LdueFA1lJLISmdvNxOVuvQda5DfJDnHD1u',
       roles: {
         create: {
@@ -65,15 +77,15 @@ async function main() {
         create: {
           name: 'Maruf Shop',
           email: 'maruffamd@gmail.com',
-          address: 'House #22, Road #9, Sector #10, Uttara, Dhaka',
+          address: demoAddress,
           productType: 'Clothing',
           productSubType: 'Men',
           pickUpPoints: {
             create: {
               name: 'Maruf Ahmed',
-              address: 'House #22, Road #9, Sector #10, Uttara, Dhaka',
-              areaId: 1143,
-              phone: '01789393745',
+              address: demoAddress,
+              areaId: handlerAreaId,
+              phone: '0200000002',
               isActive: true,
             },
           },
@@ -89,10 +101,6 @@ async function main() {
   const deliveryRoleId = await prisma.roleDescription.findUnique({
     where: { name: 'deliveryman' },
   });
-  const demoArea = await prisma.areas.findFirst({
-    where: { name: { contains: 'Uttara' } },
-  });
-  const handlerAreaId = demoArea?.id ?? 1143;
 
   await prisma.user.upsert({
     where: { email: 'reyad@gmail.com' },
@@ -100,7 +108,7 @@ async function main() {
     create: {
       email: 'reyad@gmail.com',
       name: 'Reyad Pickup',
-      phone: '01700000001',
+      phone: '0200000003',
       password: '$2b$10$btodHpHti0d4gEB2zd1LdueFA1lJLISmdvNxOVuvQda5DfJDnHD1u',
       roles: {
         create: {
@@ -109,7 +117,7 @@ async function main() {
       },
       fieldPackageHandler: {
         create: {
-          address: 'Uttara, Dhaka',
+          address: demoAddress,
           areaId: handlerAreaId,
         },
       },
@@ -122,7 +130,7 @@ async function main() {
     create: {
       email: 'tushar@gmail.com',
       name: 'Tushar Delivery',
-      phone: '01700000002',
+      phone: '0200000004',
       password: '$2b$10$btodHpHti0d4gEB2zd1LdueFA1lJLISmdvNxOVuvQda5DfJDnHD1u',
       roles: {
         create: {
@@ -131,7 +139,7 @@ async function main() {
       },
       fieldPackageHandler: {
         create: {
-          address: 'Uttara, Dhaka',
+          address: demoAddress,
           areaId: handlerAreaId,
         },
       },

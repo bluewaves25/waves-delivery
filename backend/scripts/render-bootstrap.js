@@ -19,15 +19,19 @@ async function main() {
   try {
     const users = await prisma.user.count();
     const areas = await prisma.areas.count();
-    if (users === 0 || areas === 0) {
-      console.log('Empty database detected — seeding Ghana data…');
+    const shops = await prisma.shops.count();
+    // shops===0 means a previous seed likely failed mid-way (areas only)
+    if (users === 0 || areas === 0 || shops === 0) {
+      console.log(
+        `Empty/incomplete database (users=${users}, areas=${areas}, shops=${shops}) — seeding…`,
+      );
       run('npx', ['ts-node', 'prisma/seeds/ghanaLocationSeed.ts']);
       run('npx', ['ts-node', 'prisma/seeds/parcelCatSeed.ts']);
       run('npx', ['ts-node', 'prisma/seed.ts']);
       run('node', ['scripts/ensure-demo-parcel.js']);
       console.log('Seed complete');
     } else {
-      console.log(`DB ready (users=${users}, areas=${areas})`);
+      console.log(`DB ready (users=${users}, areas=${areas}, shops=${shops})`);
     }
   } finally {
     await prisma.$disconnect();
