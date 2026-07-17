@@ -23,8 +23,10 @@ export class TrackingController {
         customerAddress: true,
         customerLatitude: true,
         customerLongitude: true,
+        createdAt: true,
         parcelStatus: true,
         fieldPackageHandlerId: true,
+        parcelDeliveryArea: { select: { id: true, name: true } },
         ParcelTimeline: {
           include: { parcelStatus: true },
           orderBy: { createdAt: 'desc' },
@@ -59,6 +61,8 @@ export class TrackingController {
         customerAddress: parcel.customerAddress,
         customerLatitude: parcel.customerLatitude,
         customerLongitude: parcel.customerLongitude,
+        createdAt: parcel.createdAt,
+        areaName: parcel.parcelDeliveryArea?.name ?? null,
         status: parcel.parcelStatus,
         timeline: parcel.ParcelTimeline,
         rider: parcel.FieldPackageHandler

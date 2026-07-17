@@ -169,6 +169,13 @@ export class ParcelsController {
     body: GuestCreateParcelDto,
   ) {
     const result = await this.parcelsService.createGuestParcel(body);
+    this.realtimeGateway.emitParcelStatus(result.parcelNumber, {
+      status: 'pending',
+      message:
+        result.timelineMessage ||
+        'Guest booking created. Awaiting pickup.',
+      createdAt: new Date().toISOString(),
+    });
     return {
       message: 'Booking created',
       data: {
@@ -287,6 +294,12 @@ export class ParcelsController {
       },
     });
 
+    this.realtimeGateway.emitParcelStatus(newParcel.parcelNumber, {
+      status: 'pending',
+      message: 'The merchant has requested the parcel to be picked up',
+      createdAt: new Date().toISOString(),
+    });
+
     return {
       data: newParcel,
     };
@@ -358,6 +371,11 @@ export class ParcelsController {
           },
         },
       });
+      this.realtimeGateway.emitParcelStatus(parcelNumber, {
+        status: 'cancelled',
+        message: 'Parcel has been cancelled',
+        createdAt: new Date().toISOString(),
+      });
       return updatedParcel;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -427,6 +445,18 @@ export class ParcelsController {
           },
         },
       });
+      const statusName =
+        handlerType === 'deliveryman'
+          ? 'in-transit'
+          : handlerType === 'pickupman'
+          ? 'picking-up'
+          : 'pending';
+      this.realtimeGateway.emitParcelStatus(parcelNumber, {
+        status: statusName,
+        message,
+        createdAt: new Date().toISOString(),
+        fieldPackageHandlerId: handlerId,
+      });
       return result;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -464,6 +494,11 @@ export class ParcelsController {
             disconnect: true,
           },
         },
+      });
+      this.realtimeGateway.emitParcelStatus(parcelNumber, {
+        status: 'processing',
+        message: 'Parcel has been received by us. We are processing it.',
+        createdAt: new Date().toISOString(),
       });
       return result;
     } catch (error) {
@@ -644,7 +679,8 @@ export class ParcelsController {
 
       this.realtimeGateway.emitParcelStatus(parcelNumber, {
         status: 'processing',
-        message: 'Parcel picked up',
+        message: 'Parcel picked up from merchant location',
+        createdAt: new Date().toISOString(),
       });
 
       await this.notificationsService.notifyParcelStatusChange({
@@ -712,6 +748,9 @@ export class ParcelsController {
 
       this.realtimeGateway.emitParcelStatus(parcelNumber, {
         status: 'delivered',
+        message:
+          'Parcel has been delivered. Thank you for using our service.',
+        createdAt: new Date().toISOString(),
         proofPhotoUrl: body.proofPhotoUrl,
         otpVerified,
       });

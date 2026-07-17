@@ -98,13 +98,32 @@ export class RidersController {
     });
 
     this.realtime.server?.emit('rider:location:update', live);
+
+    const parcelNumbers = new Set<string>();
     if (body.parcelNumber) {
-      this.realtime.server
-        ?.to(`parcel:${body.parcelNumber}`)
-        .emit('parcel:rider:location', {
-          parcelNumber: body.parcelNumber,
+      parcelNumbers.add(body.parcelNumber);
+    } else {
+      const assigned = await this.prisma.parcel.findMany({
+        where: {
+          fieldPackageHandlerId: handler.id,
+          parcelStatus: {
+            name: { notIn: ['delivered', 'cancelled'] },
+          },
+        },
+        select: { parcelNumber: true },
+        take: 20,
+      });
+      for (const p of assigned) parcelNumbers.add(p.parcelNumber);
+    }
+
+    for (const parcelNumber of parcelNumbers) {
+      this.realtime.server?.to(`parcel:${parcelNumber}`).emit(
+        'parcel:rider:location',
+        {
+          parcelNumber,
           ...live,
-        });
+        },
+      );
     }
 
     return { data: updated };

@@ -43,6 +43,11 @@ export function JobsScreen() {
     refresh();
   }, [refresh]);
 
+  const jobsRef = React.useRef<any[]>([]);
+  useEffect(() => {
+    jobsRef.current = jobs;
+  }, [jobs]);
+
   useEffect(() => {
     let sub: Location.LocationSubscription | null = null;
     (async () => {
@@ -62,7 +67,14 @@ export function JobsScreen() {
         },
         async (pos) => {
           try {
-            await pingLocation(pos.coords.latitude, pos.coords.longitude);
+            const activeParcel = jobsRef.current[0]?.parcelNumber as
+              | string
+              | undefined;
+            await pingLocation(
+              pos.coords.latitude,
+              pos.coords.longitude,
+              activeParcel,
+            );
           } catch {
             // keep UI responsive if ping fails
           }

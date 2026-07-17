@@ -252,6 +252,8 @@ export class ParcelsService {
       dto.parcelExtraInformation?.trim() || null,
     ].filter(Boolean);
 
+    const timelineMessage = `Guest booking created. Pickup from ${dto.senderAddress.trim()}`;
+
     const parcel = await this.prisma.parcel.create({
       data: {
         customerName: dto.customerName.trim(),
@@ -271,7 +273,7 @@ export class ParcelsService {
         parcelDeliveryArea: { connect: { id: dto.parcelDeliveryAreaId } },
         ParcelTimeline: {
           create: {
-            message: `Guest booking created. Pickup from ${dto.senderAddress.trim()}`,
+            message: timelineMessage,
             parcelStatusId: status.id,
           },
         },
@@ -284,6 +286,7 @@ export class ParcelsService {
       parcelCharge,
       deliveryCharge,
       cashCollection: cash,
+      timelineMessage,
     };
   }
 }

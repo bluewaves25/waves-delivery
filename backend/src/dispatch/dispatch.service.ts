@@ -143,6 +143,7 @@ export class DispatchService {
       fieldPackageHandlerId: nearest.handler.id,
       distanceKm: nearest.distanceKm,
       message,
+      createdAt: new Date().toISOString(),
     });
 
     return updated;

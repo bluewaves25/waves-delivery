@@ -103,12 +103,12 @@ export default function MerchantNav() {
                                             mb="0"
                                             _hover={{ textDecoration: 'unset' }}
                                         >
-                                            DPDM
+                                            Send
                                             <Text
                                                 color="primary.500"
                                                 display="inline"
                                             >
-                                                S
+                                                GH
                                             </Text>
                                         </Link>
                                     </Box>

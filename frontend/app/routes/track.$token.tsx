@@ -1,24 +1,32 @@
 import type { LoaderArgs, MetaFunction } from '@remix-run/node'
 import { json, redirect } from '@remix-run/node'
-import { Form, Link as RemixLink, useLoaderData, useSearchParams } from '@remix-run/react'
+import {
+    Form,
+    Link as RemixLink,
+    useLoaderData,
+    useSearchParams,
+} from '@remix-run/react'
 import {
     Alert,
     AlertIcon,
     Box,
     Button,
     Container,
-    Divider,
     Flex,
     Heading,
     Input,
     Link,
     Stack,
     Text,
-    VStack,
 } from '@chakra-ui/react'
 import axios from 'axios'
+import React from 'react'
 import Layout from '~/components/Layout'
 import DemoCredentials, { DEMO } from '~/components/common/DemoCredentials'
+import ParcelDetailsSidebar from '~/components/tracking/ParcelDetailsSidebar'
+import ParcelTimelineView from '~/components/tracking/ParcelTimelineView'
+import type { TimelineEntry } from '~/components/tracking/ParcelTimelineView'
+import { useParcelRealtime } from '~/hooks/useParcelRealtime'
 
 export const meta: MetaFunction = () => ({
     title: 'Track a parcel — SendGH',
@@ -38,7 +46,6 @@ export async function loader({ params, request }: LoaderArgs) {
     const q = url.searchParams.get('q')?.trim() || null
     const param = params.token
 
-    // Home/track forms POST to /track/lookup?q=… — redirect to a real track URL
     if ((!param || param === 'lookup') && q) {
         return redirect(`/track/${encodeURIComponent(q)}`)
     }
@@ -75,12 +82,29 @@ export default function TrackParcelPage() {
     const { parcel, error, token } = useLoaderData<typeof loader>()
     const [searchParams] = useSearchParams()
 
+    const initialItems: TimelineEntry[] = React.useMemo(
+        () =>
+            (parcel?.timeline || []).map((t: any) => ({
+                id: t.id,
+                message: t.message,
+                createdAt: t.createdAt,
+            })),
+        [parcel],
+    )
+
+    const { connected, timelineItems, statusName, rider } = useParcelRealtime({
+        parcelNumber: parcel?.parcelNumber || null,
+        initialTimeline: initialItems,
+        initialStatus: parcel?.status?.name || null,
+        initialRider: parcel?.rider || null,
+    })
+
     return (
         <Layout>
             <Box bg="gray.50" minH="70vh">
-                <Container maxW="container.md" py={{ base: 10, md: 14 }}>
-                    <Stack spacing={6}>
-                        <Stack spacing={2}>
+                <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
+                    <Stack spacing={8}>
+                        <Stack spacing={2} maxW="2xl">
                             <Text
                                 fontSize="sm"
                                 fontWeight="bold"
@@ -90,10 +114,19 @@ export default function TrackParcelPage() {
                             >
                                 Track
                             </Text>
-                            <Heading size="xl">Track your parcel</Heading>
+                            <Heading
+                                as="h1"
+                                fontSize="3xl"
+                                pb="4"
+                                borderBottom="4px"
+                                borderColor="primary.500"
+                                display="inline-block"
+                            >
+                                Track parcel
+                            </Heading>
                             <Text color="gray.600">
-                                Enter the parcel number or tracking token. No login required.
-                                Need to send something?{' '}
+                                Enter the parcel number or tracking token. No login
+                                required. Need to send something?{' '}
                                 <Link
                                     as={RemixLink}
                                     to="/book"
@@ -107,13 +140,19 @@ export default function TrackParcelPage() {
                         </Stack>
 
                         <Form method="get" action="/track/lookup">
-                            <Flex direction={{ base: 'column', sm: 'row' }} gap={0}>
+                            <Flex
+                                direction={{ base: 'column', sm: 'row' }}
+                                gap={0}
+                                maxW="xl"
+                            >
                                 <Input
                                     type="text"
                                     name="q"
                                     defaultValue={
                                         searchParams.get('q') ||
-                                        (token && token !== 'lookup' ? token : '') ||
+                                        (token && token !== 'lookup'
+                                            ? token
+                                            : '') ||
                                         ''
                                     }
                                     placeholder={`e.g. ${DEMO.track}`}
@@ -133,85 +172,47 @@ export default function TrackParcelPage() {
                             </Flex>
                         </Form>
 
-                        {!parcel ? <DemoCredentials variant="all" compact /> : null}
-
                         {error ? (
-                            <Alert status="error" borderRadius="md">
+                            <Alert status="error" borderRadius="md" maxW="xl">
                                 <AlertIcon />
                                 {error}
                             </Alert>
                         ) : null}
 
                         {parcel ? (
-                            <Stack spacing={5}>
-                                <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
-                                    <Text fontSize="sm" color="gray.500">
-                                        Parcel
-                                    </Text>
-                                    <Heading size="md" mt={1}>
-                                        {parcel.parcelNumber}
-                                    </Heading>
-                                    <Text mt={3} fontWeight="semibold" color="primary.600">
-                                        Status: {parcel.status?.name || 'unknown'}
-                                    </Text>
-                                    <Text mt={1} color="gray.700">
-                                        {parcel.customerAddress}
-                                    </Text>
-                                    {parcel.customerLatitude != null &&
-                                    parcel.customerLongitude != null ? (
-                                        <Text mt={1} fontSize="sm" color="gray.500">
-                                            Drop-off: {parcel.customerLatitude},{' '}
-                                            {parcel.customerLongitude}
-                                        </Text>
-                                    ) : null}
+                            <Flex
+                                direction={{ base: 'column', lg: 'row' }}
+                                gap={{ base: 8, lg: 0 }}
+                                bg="white"
+                                borderWidth="1px"
+                                borderColor="gray.100"
+                                p={{ base: 4, md: 8 }}
+                            >
+                                <Box
+                                    w={{ base: 'full', lg: '70%' }}
+                                    pr={{ lg: 8 }}
+                                >
+                                    <ParcelTimelineView items={timelineItems} />
                                 </Box>
-
-                                {parcel.rider ? (
-                                    <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
-                                        <Text fontSize="sm" color="gray.500">
-                                            Rider
-                                        </Text>
-                                        <Text fontWeight="semibold" mt={1}>
-                                            {parcel.rider.name}
-                                        </Text>
-                                        <Text color="gray.600">{parcel.rider.phone}</Text>
-                                        {parcel.rider.latitude != null ? (
-                                            <Text mt={1} fontSize="sm" color="green.600">
-                                                Live location: {parcel.rider.latitude},{' '}
-                                                {parcel.rider.longitude}
-                                            </Text>
-                                        ) : (
-                                            <Text mt={1} fontSize="sm" color="gray.500">
-                                                Location not available yet
-                                            </Text>
-                                        )}
-                                    </Box>
-                                ) : null}
-
-                                <Box bg="white" borderWidth="1px" borderColor="gray.200" p={5}>
-                                    <Text fontSize="sm" color="gray.500" mb={3}>
-                                        Timeline
-                                    </Text>
-                                    <VStack align="stretch" spacing={4} divider={<Divider />}>
-                                        {(parcel.timeline || []).map((item: any) => (
-                                            <Box key={item.id}>
-                                                <Text fontWeight="semibold">
-                                                    {item.parcelStatus?.name || 'update'}
-                                                </Text>
-                                                <Text fontSize="sm" color="gray.600">
-                                                    {item.message}
-                                                </Text>
-                                                {item.proofPhotoUrl ? (
-                                                    <Text fontSize="xs" color="primary.500" mt={1}>
-                                                        Proof of delivery attached
-                                                    </Text>
-                                                ) : null}
-                                            </Box>
-                                        ))}
-                                    </VStack>
-                                </Box>
-                            </Stack>
-                        ) : null}
+                                <ParcelDetailsSidebar
+                                    live={connected}
+                                    details={{
+                                        parcelNumber: parcel.parcelNumber,
+                                        customerName: parcel.customerName,
+                                        areaName: parcel.areaName,
+                                        customerAddress: parcel.customerAddress,
+                                        placedAt: parcel.createdAt,
+                                        statusName:
+                                            statusName ||
+                                            parcel.status?.name ||
+                                            undefined,
+                                        rider: rider || parcel.rider,
+                                    }}
+                                />
+                            </Flex>
+                        ) : (
+                            <DemoCredentials variant="all" compact />
+                        )}
 
                         <Text fontSize="sm" color="gray.500">
                             Merchant or staff login:{' '}
