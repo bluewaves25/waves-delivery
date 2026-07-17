@@ -29,21 +29,42 @@ Use this checklist against the live demo or local stack.
 | 1.2 | Nav shows Track · Book delivery · Log in · Sign up | Links work on desktop and mobile menu |
 | 1.3 | Footer has the same four links | |
 | 1.4 | Demo access box lists merchant / admin / riders / track | Credentials visible on home |
-| 1.5 | Click **Track a parcel** → `/track/lookup` | Track form + SendGH header (not a separate dark theme) |
+| 1.5 | Click **Track a parcel** → `/track/lookup` | Track form + SendGH header |
 | 1.6 | Track `DEMO-TRACK-001` | Parcel status, address, timeline load |
 | 1.7 | Or open `/track/DEMO-TRACK-001` directly | Same result |
-| 1.8 | Click **Book a delivery** → `/book` | Explains merchant flow; CTAs to Sign up / Log in / Track |
+| 1.8 | Click **Book a delivery** → `/book` | Guest form (no signup required) |
 
 ---
 
-## 2. Merchant — book a delivery
+## 1b. Guest book (no account)
+
+| # | Action | Expected |
+|---|---|---|
+| 1b.1 | Open `/book` | Form: From you / To customer / Package + live charge |
+| 1b.2 | Fill pickup + delivery areas (Ghana), phones, addresses, weight | Estimate updates when delivery area + weight set |
+| 1b.3 | Submit **Book delivery** | Redirect to `/track/<token>` with new parcel |
+| 1b.4 | Note parcel number on track page | Can re-track later with that number |
+| 1b.5 | Optional COD amount | Charge includes 1% COD fee |
+
+API check:
+
+```bash
+# Pick real area IDs from /service-area/tree first
+curl -X POST https://dpdms-api.onrender.com/parcels/guest \
+  -H "Content-Type: application/json" \
+  -d "{\"senderName\":\"Kwame\",\"senderPhone\":\"0244111000\",\"senderAddress\":\"Osu\",\"senderAreaId\":1,\"customerName\":\"Ama\",\"customerPhone\":\"0200222000\",\"customerAddress\":\"East Legon\",\"parcelDeliveryAreaId\":2,\"parcelWeight\":500,\"parcelCashCollection\":0}"
+```
+
+---
+
+## 2. Merchant — dashboard booking (optional)
 
 | # | Action | Expected |
 |---|---|---|
 | 2.1 | `/login` | Form prefilled with `maruffamd@gmail.com` / `123456` |
 | 2.2 | Log in | Redirect to `/dashboard` |
 | 2.3 | Nav **Book delivery** → `/create-parcel` | Create-parcel form |
-| 2.4 | Create a parcel to a Ghana area (e.g. Osu / East Legon) | Success; parcel appears in Parcels list |
+| 2.4 | Create a parcel to a Ghana area | Success; parcel appears in Parcels list |
 | 2.5 | Copy parcel number → open `/track/<number>` in a private window | Public track works without login |
 | 2.6 | `/parcel-list` | Lists parcels |
 | 2.7 | `/parcel-tracking?parcelNumber=…` | Merchant timeline view |
@@ -123,9 +144,9 @@ On Render, first boot runs `npm run render:start` which migrates and seeds when 
 ## Quick path map
 
 ```
-Visitor ──► / ──► Track  (/track/…)     no login
-         └──────► Book   (/book) ──► /register or /login
-                                      └──► /create-parcel
+Visitor ──► / ──► Track  (/track/…)           no login
+         └──────► Book   (/book) ──► POST /parcels/guest ──► /track/TOKEN
+                                      (optional) /register for merchant dashboard
 
 Staff   ──► /admin/login
 Rider   ──► /packagehandler/login

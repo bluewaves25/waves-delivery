@@ -1,5 +1,13 @@
 import { Parcel, Prisma } from '@prisma/client';
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  MaxLength,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateParcelDto implements Parcel {
   id: number;
@@ -62,6 +70,63 @@ export class CreateParcelDto implements Parcel {
   assignmentIdempotencyKey: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** Public guest booking — no shop/user IDs from client */
+export class GuestCreateParcelDto {
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(120)
+  senderName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(40)
+  senderPhone: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(300)
+  senderAddress: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  senderAreaId: number;
+
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(120)
+  customerName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(40)
+  customerPhone: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(300)
+  customerAddress: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  parcelDeliveryAreaId: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  parcelWeight: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  parcelCashCollection?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  parcelExtraInformation?: string;
 }
 
 export class UpdateParcelDto implements Prisma.ParcelUpdateInput {

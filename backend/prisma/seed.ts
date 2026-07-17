@@ -146,6 +146,41 @@ async function main() {
     },
   });
 
+  // SendGH Walk-in shop for public guest bookings (no signup)
+  await prisma.user.upsert({
+    where: { email: 'walkin@sendgh.com' },
+    update: {},
+    create: {
+      email: 'walkin@sendgh.com',
+      name: 'SendGH Walk-in',
+      phone: '0300000000',
+      password: '$2b$10$btodHpHti0d4gEB2zd1LdueFA1lJLISmdvNxOVuvQda5DfJDnHD1u',
+      roles: {
+        create: {
+          role: { connect: { id: merchantRoleId.id } },
+        },
+      },
+      shops: {
+        create: {
+          name: 'SendGH Walk-in',
+          email: 'walkin@sendgh.com',
+          address: demoAddress,
+          productType: 'General',
+          productSubType: 'Walk-in',
+          pickUpPoints: {
+            create: {
+              name: 'SendGH Accra Hub',
+              address: demoAddress,
+              areaId: handlerAreaId,
+              phone: '0300000000',
+              isActive: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
   // Seed product categories
   const productParentCat = ProductTypes.parentCategories;
   const productChildCat = ProductTypes.childCategories;

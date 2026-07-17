@@ -1,140 +1,467 @@
 import {
+    Alert,
+    AlertIcon,
     Box,
     Button,
     Container,
-    Flex,
+    FormControl,
+    FormLabel,
     Heading,
+    Input,
+    NumberDecrementStepper,
+    NumberIncrementStepper,
+    NumberInput,
+    NumberInputField,
+    NumberInputStepper,
+    SimpleGrid,
     Stack,
     Text,
+    Textarea,
     VStack,
 } from '@chakra-ui/react'
-import type { LoaderFunction, MetaFunction } from '@remix-run/node'
-import { redirect } from '@remix-run/node'
-import { Link as RemixLink } from '@remix-run/react'
+import type {
+    ActionFunction,
+    LoaderFunction,
+    MetaFunction,
+} from '@remix-run/node'
+import { json, redirect } from '@remix-run/node'
+import {
+    Form,
+    Link as RemixLink,
+    useActionData,
+    useLoaderData,
+    useTransition,
+} from '@remix-run/react'
+import React from 'react'
+import type { SingleValue } from 'chakra-react-select'
 import Layout from '~/components/Layout'
 import DemoCredentials from '~/components/common/DemoCredentials'
-import { getUserId } from '~/utils/session.server'
+import SearchableAreaSelect from '~/components/common/SearchableAreaSelect'
+import type { SearchableSelectOptionsType } from '~/components/common/SearchableSelectInput'
+import type { ParcelPrices } from '~/types'
+import { badRequest, calculateDeliveryCharge } from '~/utils'
+import axios from '~/utils/axios.server'
 
 export const meta: MetaFunction = () => ({
     title: 'Book a delivery — SendGH',
 })
 
-export const loader: LoaderFunction = async ({ request }) => {
-    const userId = await getUserId(request)
-    if (userId) {
-        return redirect('/create-parcel')
-    }
-    return null
+type LoaderData = {
+    parcelPrices: ParcelPrices
+    preferredDivision: string | null
 }
 
-const steps = [
-    {
-        title: 'Sign up as a merchant',
-        body: 'Create your SendGH account with shop name, contact, and a pickup address in Ghana.',
-    },
-    {
-        title: 'Book the parcel',
-        body: 'From your dashboard, open Book delivery — enter the customer, destination area, and package details.',
-    },
-    {
-        title: 'We pick up and deliver',
-        body: 'Riders collect from your pickup point and deliver nationwide. You follow status in your dashboard.',
-    },
-    {
-        title: 'Customer tracks live',
-        body: 'Share the parcel number or tracking link. Anyone can open Track — no login required.',
-    },
-]
+export const loader: LoaderFunction = async () => {
+    let parcelPrices: ParcelPrices = { data: [] }
+    try {
+        const res = await axios.get('/parcels/pricing')
+        parcelPrices = res.data
+    } catch {
+        parcelPrices = { data: [] }
+    }
+
+    let preferredDivision: string | null = 'Greater Accra'
+    try {
+        const geo = await axios.get('/geo/detect')
+        preferredDivision = geo.data?.preferredDivision || preferredDivision
+    } catch {
+        /* keep Accra default */
+    }
+
+    return json<LoaderData>({ parcelPrices, preferredDivision })
+}
+
+type ActionData = {
+    formError?: string
+    fields?: Record<string, string>
+}
+
+export const action: ActionFunction = async ({ request }) => {
+    const form = await request.formData()
+    const fields = {
+        senderName: String(form.get('senderName') || '').trim(),
+        senderPhone: String(form.get('senderPhone') || '').trim(),
+        senderAddress: String(form.get('senderAddress') || '').trim(),
+        senderAreaId: String(form.get('senderAreaId') || ''),
+        customerName: String(form.get('customerName') || '').trim(),
+        customerPhone: String(form.get('customerPhone') || '').trim(),
+        customerAddress: String(form.get('customerAddress') || '').trim(),
+        parcelDeliveryAreaId: String(form.get('parcelDeliveryAreaId') || ''),
+        parcelWeight: String(form.get('parcelWeight') || '500'),
+        parcelCashCollection: String(form.get('parcelCashCollection') || '0'),
+        parcelExtraInformation: String(
+            form.get('parcelExtraInformation') || '',
+        ).trim(),
+    }
+
+    if (
+        !fields.senderName ||
+        !fields.senderPhone ||
+        !fields.senderAddress ||
+        !fields.senderAreaId ||
+        !fields.customerName ||
+        !fields.customerPhone ||
+        !fields.customerAddress ||
+        !fields.parcelDeliveryAreaId
+    ) {
+        return badRequest({
+            formError: 'Please fill in all required fields.',
+            fields,
+        } satisfies ActionData)
+    }
+
+    try {
+        const res = await axios.post('/parcels/guest', {
+            senderName: fields.senderName,
+            senderPhone: fields.senderPhone,
+            senderAddress: fields.senderAddress,
+            senderAreaId: Number(fields.senderAreaId),
+            customerName: fields.customerName,
+            customerPhone: fields.customerPhone,
+            customerAddress: fields.customerAddress,
+            parcelDeliveryAreaId: Number(fields.parcelDeliveryAreaId),
+            parcelWeight: Number(fields.parcelWeight) || 500,
+            parcelCashCollection: Number(fields.parcelCashCollection) || 0,
+            parcelExtraInformation: fields.parcelExtraInformation || undefined,
+        })
+        const token = res.data?.data?.trackingToken
+        const parcelNumber = res.data?.data?.parcelNumber
+        if (!token) {
+            return badRequest({
+                formError: 'Booking created but tracking link missing. Try Track with your parcel number.',
+                fields: { ...fields, parcelNumber: parcelNumber || '' },
+            })
+        }
+        return redirect(`/track/${encodeURIComponent(token)}`)
+    } catch (e: any) {
+        const message =
+            e?.response?.data?.message ||
+            (Array.isArray(e?.response?.data?.message)
+                ? e.response.data.message.join(', ')
+                : null) ||
+            e?.message ||
+            'Could not create booking. Please try again.'
+        return badRequest({
+            formError: String(message),
+            fields,
+        } satisfies ActionData)
+    }
+}
 
 export default function BookDeliveryPage() {
+    const { parcelPrices, preferredDivision } = useLoaderData<LoaderData>()
+    const actionData = useActionData<ActionData>()
+    const transition = useTransition()
+    const submitting = transition.state === 'submitting'
+
+    const [weight, setWeight] = React.useState(500)
+    const [cash, setCash] = React.useState(0)
+    const [deliveryZoneId, setDeliveryZoneId] = React.useState<number | undefined>()
+    const [senderAreaId, setSenderAreaId] = React.useState(
+        actionData?.fields?.senderAreaId || '',
+    )
+    const [deliveryAreaId, setDeliveryAreaId] = React.useState(
+        actionData?.fields?.parcelDeliveryAreaId || '',
+    )
+
+    const deliveryCharge = React.useMemo(
+        () =>
+            calculateDeliveryCharge({
+                weight,
+                zoneId: deliveryZoneId || 0,
+                parcelPrices,
+            }),
+        [weight, deliveryZoneId, parcelPrices],
+    )
+    const codFee = cash > 0 ? cash / 100 : 0
+    const totalCharge = deliveryCharge + codFee
+
+    const onSenderArea = (e: SingleValue<SearchableSelectOptionsType>) => {
+        setSenderAreaId(e?.value || '')
+    }
+    const onDeliveryArea = (e: SingleValue<SearchableSelectOptionsType>) => {
+        setDeliveryAreaId(e?.value || '')
+        setDeliveryZoneId(e?.zoneId)
+    }
+
     return (
         <Layout>
             <Box bg="gray.50" borderBottom="1px" borderColor="gray.200">
-                <Container maxW="container.xl" py={{ base: 12, md: 16 }}>
-                    <Stack spacing={6} maxW="2xl">
-                        <Text
-                            fontSize="sm"
-                            fontWeight="bold"
-                            color="primary.500"
-                            letterSpacing="wider"
-                            textTransform="uppercase"
-                        >
-                            Book a delivery
+                <Container maxW="container.md" py={{ base: 8, md: 10 }}>
+                    <Stack spacing={3}>
+                        <Heading size="xl">Book a delivery</Heading>
+                        <Text color="gray.600" fontSize="lg">
+                            No account needed. Tell us where to pick up and where to
+                            deliver — we give you a tracking link instantly.
                         </Text>
-                        <Heading size="2xl" lineHeight="short">
-                            Send with Send
-                            <Text as="span" color="primary.500">
-                                GH
-                            </Text>
-                        </Heading>
-                        <Text fontSize="lg" color="gray.600">
-                            Booking is for shops and senders. If you only need to follow a
-                            package someone else sent, use Track instead.
-                        </Text>
-                        <Flex gap={3} flexWrap="wrap">
+                        <Text fontSize="sm" color="gray.500">
+                            Shop with many parcels?{' '}
                             <Button
                                 as={RemixLink}
                                 to="/register"
+                                variant="link"
                                 colorScheme="primary"
-                                size="lg"
+                                size="sm"
                             >
-                                Sign up to book
+                                Create a merchant account
                             </Button>
-                            <Button
-                                as={RemixLink}
-                                to="/login"
-                                variant="outline"
-                                colorScheme="primary"
-                                size="lg"
-                            >
-                                I already have an account
-                            </Button>
-                            <Button
-                                as={RemixLink}
-                                to="/track/lookup"
-                                variant="ghost"
-                                size="lg"
-                            >
-                                Track a parcel instead
-                            </Button>
-                        </Flex>
+                        </Text>
                     </Stack>
                 </Container>
             </Box>
 
-            <Container maxW="container.xl" py={{ base: 12, md: 16 }}>
-                <Heading size="lg" mb={10}>
-                    How it works
-                </Heading>
-                <Stack spacing={10} maxW="3xl">
-                    {steps.map((step, i) => (
-                        <Flex key={step.title} gap={5} align="flex-start">
-                            <Text
-                                fontSize="2xl"
-                                fontWeight="extrabold"
-                                color="primary.500"
-                                lineHeight="1"
-                                minW="2rem"
-                            >
-                                {i + 1}
-                            </Text>
-                            <VStack align="start" spacing={1}>
-                                <Heading size="md">{step.title}</Heading>
-                                <Text color="gray.600">{step.body}</Text>
-                            </VStack>
-                        </Flex>
-                    ))}
-                </Stack>
+            <Container maxW="container.md" py={{ base: 8, md: 12 }}>
+                <Form method="post">
+                    <VStack align="stretch" spacing={10}>
+                        {actionData?.formError ? (
+                            <Alert status="error" borderRadius="md">
+                                <AlertIcon />
+                                {actionData.formError}
+                            </Alert>
+                        ) : null}
 
-                <Flex mt={14} gap={3} flexWrap="wrap">
-                    <Button as={RemixLink} to="/register" colorScheme="primary" size="lg">
-                        Create merchant account
-                    </Button>
-                    <Button as={RemixLink} to="/" variant="ghost" size="lg">
-                        Back to home
-                    </Button>
-                </Flex>
-                <DemoCredentials variant="all" />
+                        <Box>
+                            <Heading size="md" mb={4}>
+                                From you (pickup)
+                            </Heading>
+                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                <FormControl isRequired>
+                                    <FormLabel>Your name</FormLabel>
+                                    <Input
+                                        name="senderName"
+                                        defaultValue={actionData?.fields?.senderName}
+                                        placeholder="Kwame Mensah"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Your phone</FormLabel>
+                                    <Input
+                                        name="senderPhone"
+                                        defaultValue={actionData?.fields?.senderPhone}
+                                        placeholder="024XXXXXXX"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired gridColumn={{ md: 'span 2' }}>
+                                    <FormLabel>Pickup area</FormLabel>
+                                    <input
+                                        type="hidden"
+                                        name="senderAreaId"
+                                        value={senderAreaId}
+                                        required
+                                    />
+                                    <SearchableAreaSelect
+                                        name={undefined}
+                                        preferredDivision={preferredDivision}
+                                        onChange={onSenderArea}
+                                    />
+                                </FormControl>
+                                <FormControl isRequired gridColumn={{ md: 'span 2' }}>
+                                    <FormLabel>Pickup address</FormLabel>
+                                    <Input
+                                        name="senderAddress"
+                                        defaultValue={
+                                            actionData?.fields?.senderAddress
+                                        }
+                                        placeholder="House / street / landmark"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                            </SimpleGrid>
+                        </Box>
+
+                        <Box>
+                            <Heading size="md" mb={4}>
+                                To customer (delivery)
+                            </Heading>
+                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                <FormControl isRequired>
+                                    <FormLabel>Customer name</FormLabel>
+                                    <Input
+                                        name="customerName"
+                                        defaultValue={
+                                            actionData?.fields?.customerName
+                                        }
+                                        placeholder="Ama Boateng"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired>
+                                    <FormLabel>Customer phone</FormLabel>
+                                    <Input
+                                        name="customerPhone"
+                                        defaultValue={
+                                            actionData?.fields?.customerPhone
+                                        }
+                                        placeholder="020XXXXXXX"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                                <FormControl isRequired gridColumn={{ md: 'span 2' }}>
+                                    <FormLabel>Delivery area</FormLabel>
+                                    <input
+                                        type="hidden"
+                                        name="parcelDeliveryAreaId"
+                                        value={deliveryAreaId}
+                                        required
+                                    />
+                                    <SearchableAreaSelect
+                                        name={undefined}
+                                        preferredDivision={preferredDivision}
+                                        onChange={onDeliveryArea}
+                                    />
+                                </FormControl>
+                                <FormControl isRequired gridColumn={{ md: 'span 2' }}>
+                                    <FormLabel>Delivery address</FormLabel>
+                                    <Input
+                                        name="customerAddress"
+                                        defaultValue={
+                                            actionData?.fields?.customerAddress
+                                        }
+                                        placeholder="House / street / landmark"
+                                        bg="white"
+                                    />
+                                </FormControl>
+                            </SimpleGrid>
+                        </Box>
+
+                        <Box>
+                            <Heading size="md" mb={4}>
+                                Package
+                            </Heading>
+                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                <FormControl isRequired>
+                                    <FormLabel>Weight (grams)</FormLabel>
+                                    <input type="hidden" name="parcelWeight" value={weight} />
+                                    <NumberInput
+                                        value={weight}
+                                        min={500}
+                                        max={20000}
+                                        step={500}
+                                        onChange={(_, n) =>
+                                            setWeight(Number.isFinite(n) ? n : 500)
+                                        }
+                                        bg="white"
+                                    >
+                                        <NumberInputField />
+                                        <NumberInputStepper>
+                                            <NumberIncrementStepper />
+                                            <NumberDecrementStepper />
+                                        </NumberInputStepper>
+                                    </NumberInput>
+                                </FormControl>
+                                <FormControl>
+                                    <FormLabel>
+                                        Cash on delivery (GHS){' '}
+                                        <Text as="span" color="gray.500" fontSize="sm">
+                                            optional
+                                        </Text>
+                                    </FormLabel>
+                                    <input
+                                        type="hidden"
+                                        name="parcelCashCollection"
+                                        value={cash}
+                                    />
+                                    <NumberInput
+                                        value={cash}
+                                        min={0}
+                                        onChange={(_, n) =>
+                                            setCash(Number.isFinite(n) ? n : 0)
+                                        }
+                                        bg="white"
+                                    >
+                                        <NumberInputField placeholder="0" />
+                                        <NumberInputStepper>
+                                            <NumberIncrementStepper />
+                                            <NumberDecrementStepper />
+                                        </NumberInputStepper>
+                                    </NumberInput>
+                                </FormControl>
+                                <FormControl gridColumn={{ md: 'span 2' }}>
+                                    <FormLabel>
+                                        Notes{' '}
+                                        <Text as="span" color="gray.500" fontSize="sm">
+                                            optional
+                                        </Text>
+                                    </FormLabel>
+                                    <Textarea
+                                        name="parcelExtraInformation"
+                                        defaultValue={
+                                            actionData?.fields
+                                                ?.parcelExtraInformation
+                                        }
+                                        placeholder="Fragile, call on arrival, etc."
+                                        bg="white"
+                                        rows={3}
+                                    />
+                                </FormControl>
+                            </SimpleGrid>
+                        </Box>
+
+                        <Box
+                            bg="white"
+                            borderWidth="1px"
+                            borderColor="gray.200"
+                            p={5}
+                        >
+                            <Text fontWeight="semibold" mb={2}>
+                                Estimated charge
+                            </Text>
+                            <Text color="gray.600" fontSize="sm" mb={3}>
+                                Final fee is calculated on the server from delivery
+                                area and weight.
+                            </Text>
+                            <Stack spacing={1} fontSize="sm">
+                                <Text>
+                                    Delivery:{' '}
+                                    <Text as="span" fontWeight="bold">
+                                        GHS {deliveryCharge.toFixed(2)}
+                                    </Text>
+                                </Text>
+                                {codFee > 0 ? (
+                                    <Text>
+                                        COD fee:{' '}
+                                        <Text as="span" fontWeight="bold">
+                                            GHS {codFee.toFixed(2)}
+                                        </Text>
+                                    </Text>
+                                ) : null}
+                                <Text fontSize="lg" pt={2}>
+                                    Total:{' '}
+                                    <Text as="span" fontWeight="extrabold" color="primary.600">
+                                        GHS {totalCharge.toFixed(2)}
+                                    </Text>
+                                </Text>
+                            </Stack>
+                        </Box>
+
+                        <Button
+                            type="submit"
+                            colorScheme="primary"
+                            size="lg"
+                            isLoading={submitting}
+                            isDisabled={!senderAreaId || !deliveryAreaId}
+                        >
+                            Book delivery
+                        </Button>
+
+                        <Text fontSize="sm" color="gray.500" textAlign="center">
+                            Already have a parcel number?{' '}
+                            <Button
+                                as={RemixLink}
+                                to="/track/lookup"
+                                variant="link"
+                                colorScheme="primary"
+                                size="sm"
+                            >
+                                Track it
+                            </Button>
+                        </Text>
+
+                        <DemoCredentials variant="all" compact />
+                    </VStack>
+                </Form>
             </Container>
         </Layout>
     )

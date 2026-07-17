@@ -22,7 +22,7 @@ import { Roles } from 'src/decorator/roles.decorator';
 import { Role } from 'src/enums/role.enum';
 import { FiledPackageHandlersService } from 'src/filed-package-handlers/filed-package-handlers.service';
 import { RolesGuard } from 'src/guard/roles.guard';
-import { CreateParcelDto, UpdateParcelDto } from './dto/parcels.dto';
+import { CreateParcelDto, GuestCreateParcelDto, UpdateParcelDto } from './dto/parcels.dto';
 import { ParcelShopGuard } from './guard/parcelShop.guard';
 import { ParcelsService } from './parcels.service';
 import { NotificationsService } from 'src/notifications/notifications.service';
@@ -154,6 +154,28 @@ export class ParcelsController {
       },
     );
     return { data: prices };
+  }
+
+  // POST /parcels/guest — public door-to-door booking (no login)
+  @Post('guest')
+  async createGuestParcel(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    body: GuestCreateParcelDto,
+  ) {
+    const result = await this.parcelsService.createGuestParcel(body);
+    return {
+      message: 'Booking created',
+      data: {
+        ...result,
+        trackPath: `/track/${result.trackingToken}`,
+      },
+    };
   }
 
   // GET /parcels/1

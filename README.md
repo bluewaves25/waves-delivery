@@ -30,8 +30,9 @@ Deploy notes: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 ## What visitors can do
 
 1. **Track** — no account; enter parcel number / tracking token  
-2. **Book a delivery** — merchant sign-up → dashboard → Book delivery  
-3. **Staff** — admin and rider panels at `/admin` and `/packagehandler`
+2. **Book a delivery** — public form at `/book` (no signup); get a tracking link  
+3. **Merchant account** (optional) — dashboard for shops that send often  
+4. **Staff** — admin and rider panels at `/admin` and `/packagehandler`
 
 ## Getting started (local)
 

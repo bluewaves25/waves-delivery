@@ -153,26 +153,26 @@ function Home() {
                         <Stack spacing={3} maxW="2xl">
                             <Heading size="lg">Need to send something?</Heading>
                             <Text color="gray.600" fontSize="lg">
-                                Merchants book pickups and deliveries from a SendGH account.
-                                Customers use the tracking link you share.
+                                Book in one form — no signup. Merchants who send often can
+                                still create an account for a dashboard.
                             </Text>
                         </Stack>
                         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
                             {[
                                 {
                                     step: '1',
-                                    title: 'Create your shop account',
-                                    body: 'Sign up with your business details and pickup point in Ghana.',
+                                    title: 'Fill pickup and delivery',
+                                    body: 'Your details, the customer’s address, weight, and optional cash on delivery.',
                                 },
                                 {
                                     step: '2',
-                                    title: 'Book the delivery',
-                                    body: 'Add the customer, address, and package — we schedule pickup.',
+                                    title: 'We pick up and deliver',
+                                    body: 'Riders collect from your address and deliver across Ghana.',
                                 },
                                 {
                                     step: '3',
                                     title: 'Share tracking',
-                                    body: 'Send the parcel number or tracking link so anyone can follow it.',
+                                    body: 'You get a parcel number and link — anyone can track without logging in.',
                                 },
                             ].map((item) => (
                                 <VStack key={item.step} align="start" spacing={3}>
@@ -196,7 +196,7 @@ function Home() {
                                 colorScheme="primary"
                                 size="lg"
                             >
-                                How booking works
+                                Book a delivery
                             </Button>
                             <Button
                                 as={RemixLink}
@@ -205,7 +205,7 @@ function Home() {
                                 colorScheme="primary"
                                 size="lg"
                             >
-                                Sign up to send
+                                Merchant sign up
                             </Button>
                         </Flex>
                         <DemoCredentials variant="all" />
