@@ -1,0 +1,51 @@
+# Render Blueprint — Delivery Management System
+# https://render.com/docs/blueprint-spec
+#
+# 1) Create account: https://dashboard.render.com/register
+# 2) Push this repo to GitHub
+# 3) Render → New → Blueprint → select repo → Apply
+
+services:
+  - type: web
+    name: dpdms-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run render:start
+    healthCheckPath: /
+    disk:
+      name: dpdms-sqlite
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.1"
+      - key: DATABASE_URL
+        value: file:/var/data/prod.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BCRYPT_SALT_OR_ROUNDS
+        value: "10"
+      - key: PAYSTACK_CALLBACK_URL
+        sync: false
+      - key: FCM_SERVER_KEY
+        sync: false
+      - key: SMS_PROVIDER_KEY
+        sync: false
+
+  - type: web
+    name: dpdms-web
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run render:start
+    envVars:
+      - key: NODE_VERSION
+        value: "20.11.1"
+      - key: SESSION_SECRET
+        generateValue: true
+      # Set this AFTER api is live, e.g. https://dpdms-api.onrender.com
+      - key: API_BASE_URL
+        sync: false

@@ -1,0 +1,55 @@
+# compiled output
+/dist
+**/node_modules/
+backend/dist
+frontend/build
+frontend/public/build
+.agents/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# MySQL docker volume at repo root only
+/data/
+!backend/prisma/data/
+
+# Env & local database
+.env
+.env.local
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.db
+*.db-journal
+
+# Legacy Bangladesh dumps (huge) — Ghana files are committed
+backend/prisma/data/AreaTree.ts
+backend/prisma/data/AreaPrice.ts
